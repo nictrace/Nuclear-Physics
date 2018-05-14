@@ -19,15 +19,15 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.halvors.nuclearphysics.common.entity.EntityParticle;
-import org.halvors.nuclearphysics.common.grid.GridTicker;
-import org.halvors.nuclearphysics.common.grid.thermal.ThermalGrid;
 import org.halvors.nuclearphysics.common.init.*;
 import org.halvors.nuclearphysics.common.network.PacketHandler;
+import org.halvors.nuclearphysics.common.science.grid.GridTicker;
+import org.halvors.nuclearphysics.common.science.grid.ThermalGrid;
 
 @Mod(modid = Reference.ID,
      name = Reference.NAME,
      version = Reference.VERSION,
-	 dependencies = "after:mekanism",
+	 dependencies = "after:" + Integration.BUILDCRAFT_CORE_ID + ";after:" + Integration.COFH_CORE_ID + ";after:" + Integration.MEKANISM_ID,
 	 guiFactory = "org.halvors." + Reference.ID + ".client.gui.configuration.GuiConfiguationFactory")
 public class NuclearPhysics {
 	// The instance of your mod that Forge uses.
