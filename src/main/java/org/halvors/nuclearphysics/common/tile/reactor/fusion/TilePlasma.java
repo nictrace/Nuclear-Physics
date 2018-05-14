@@ -68,4 +68,8 @@ public class TilePlasma extends TileEntity implements ITickable {
     public void setTemperature(final int temperature) {
         this.temperature = temperature;
     }
+    
+    public int getTemperature() {
+    	return this.temperature;
+    }
 }
