@@ -100,8 +100,4 @@ public class TilePlasma extends TileBase implements ITickable {
     public void setTemperature(final int temperature) {
         this.temperature = temperature;
     }
-    
-    public int getTemperature() {
-    	return this.temperature;
-    }
 }
