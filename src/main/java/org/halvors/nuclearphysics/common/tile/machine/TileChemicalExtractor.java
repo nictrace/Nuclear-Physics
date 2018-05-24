@@ -66,7 +66,7 @@ public class TileChemicalExtractor extends TileProcess {
 
         if (!worldObj.isRemote) {
             if (worldObj.getWorldTime() % 20 == 0) {
-                FluidUtility.transferFluidToNeighbors(worldObj, xCoord, yCoord, zCoord, this);
+                FluidUtility.transferFluidToNeighbors(worldObj, pos, this);
             }
 
             EnergyUtility.discharge(0, this);
@@ -101,7 +101,7 @@ public class TileChemicalExtractor extends TileProcess {
 
     @Override
     public boolean canFill(final ForgeDirection from, final Fluid fluid) {
-        return fluid.getID() == ModFluids.fluidStackWater.getFluidID() || fluid.getID() == ModFluids.fluidStackDeuterium.getFluidID();
+        return fluid.getID() == FluidRegistry.WATER.getID() || fluid.getID() == ModFluids.deuterium.getID();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,6 +120,11 @@ public class TileChemicalExtractor extends TileProcess {
 
             case 3: // Input tank fill slot.
             case 4: // Input tank drain slot.
+            	boolean a,b,c;
+            	a = FluidUtility.isEmptyContainer(itemStack);
+            	b = FluidUtility.isFilledContainer(itemStack, FluidRegistry.WATER);
+            	c = FluidUtility.isFilledContainer(itemStack, ModFluids.deuterium);
+            	NuclearPhysics.getLogger().warn("*** isItemValidForSlot() returns [" + a + "," + b + "," + c + "]");
                 return FluidUtility.isEmptyContainer(itemStack) || FluidUtility.isFilledContainer(itemStack, FluidRegistry.WATER) || FluidUtility.isFilledContainer(itemStack, ModFluids.deuterium);
 
             case 5: // Output tank fill slot.
