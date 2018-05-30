@@ -2,14 +2,19 @@ package org.halvors.nuclearphysics.common.tile.machine;
 
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.WeightedRandom.Item;
+
 import org.halvors.nuclearphysics.api.recipe.QuantumAssemblerRecipes;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
+import org.halvors.nuclearphysics.common.ConfigurationManager.Assembler;
 import org.halvors.nuclearphysics.common.block.machine.BlockMachine.EnumMachine;
 import org.halvors.nuclearphysics.common.capabilities.energy.EnergyStorage;
 import org.halvors.nuclearphysics.common.init.ModSounds;
 import org.halvors.nuclearphysics.common.network.packet.PacketTileEntity;
 import org.halvors.nuclearphysics.common.tile.TileInventoryMachine;
 import org.halvors.nuclearphysics.common.utility.OreDictionaryHelper;
+
+import cpw.mods.fml.common.registry.GameRegistry;
 
 public class TileQuantumAssembler extends TileInventoryMachine {
     private static final int ENERGY_PER_TICK = 2048000;
@@ -94,16 +99,20 @@ public class TileQuantumAssembler extends TileInventoryMachine {
         final ItemStack itemStack = getStackInSlot(6);	// template and result
 
         if (itemStack != null) {
-            if (QuantumAssemblerRecipes.hasRecipe(itemStack)) {	// if cloning enabled
-                for (int i = 0; i <= 5; i++) {
-                    final ItemStack itemStackInSlot = getStackInSlot(i);
+        	if(Assembler.whiteList.length == 0 && Assembler.blackList.length == 0)
+        		if (QuantumAssemblerRecipes.hasRecipe(itemStack)) {	// if cloning enabled
+        			for (int i = 0; i <= 5; i++) {
+        				final ItemStack itemStackInSlot = getStackInSlot(i);
 
-                    if (!OreDictionaryHelper.isDarkmatterCell(itemStackInSlot)) {
-                        return false;							// slots 0-5 must contains dark matter cells
-                    }
-                }
-            }
-            else return false;	// item not in recipes
+        				if (!OreDictionaryHelper.isDarkmatterCell(itemStackInSlot)) {
+        					return false;							// slots 0-5 must contains dark matter cells
+        				}
+        			}
+        		}
+        		else return false;	// item not in recipes
+        	else if(Assembler.whiteList.length > 0) {	// whitelist present
+        		checkForLists(itemStack);
+        	}
             return itemStack.stackSize < 64;	// and target slot must have free space (if template have an NBT, cannot copy it)
         }
 
@@ -152,5 +161,41 @@ public class TileQuantumAssembler extends TileInventoryMachine {
 
     public float getRotationYaw3() {
         return rotationYaw3;
+    }
+    /**
+     * Check white/black lists and RecipeRegistry...
+     * @return
+     */
+    protected boolean checkForLists(final ItemStack his) {
+    	if(Assembler.whiteList.length == 0 && Assembler.blackList.length == 0 && QuantumAssemblerRecipes.hasRecipe(his)) {
+    		return true;
+    	}
+    	else if(Assembler.whiteList.length > 0) {
+    		if(inList(Assembler.whiteList, his)) return true;
+    	}
+    	else if(Assembler.blackList.length > 0) {
+    		if(!inList(Assembler.blackList, his)) return true;
+    	}
+    	return false;
+    }
+    
+    /**
+     * Better solution is to save all elements as IDs & metas, and compare with this
+     * @param list
+     * @param itemStack
+     * @return
+     */
+    protected boolean inList(String[] list, ItemStack itemStack) {
+    	String[] parts;
+    	String meta = "0";
+    	net.minecraft.item.Item found;
+    	
+    	for(String itm_name : list) {
+			parts = itm_name.split(":");
+    		found = GameRegistry.findItem(parts[0], parts[1]);
+    		if(parts.length == 3) meta = parts[2];
+    		if(found != null) if(found.equals(itemStack.getItem()) && itemStack.getMetadata() == Integer.valueOf(meta)) return true;
+    	}
+    	return false;
     }
 }

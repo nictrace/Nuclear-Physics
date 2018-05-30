@@ -43,6 +43,10 @@ public class ConfigurationManager {
         //public static boolean allowIC2UraniumCompression = true;
         public static boolean allowGeneratedQuantumAssemblerRecipes;
     }
+    public static class Assembler {
+        public static String[] whiteList;
+        public static String[] blackList;
+    }
 
     public static void loadConfiguration(final Configuration configuration) {
         configuration.load();
