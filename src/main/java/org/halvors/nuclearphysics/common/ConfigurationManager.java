@@ -83,6 +83,8 @@ public class ConfigurationManager {
         //General.allowIC2UraniumCompression = configuration.get(Configuration.CATEGORY_GENERAL, "allowIC2UraniumCompression", true).getBoolean();
         General.allowGeneratedQuantumAssemblerRecipes = configuration.get(Configuration.CATEGORY_GENERAL, "allowGeneratedQuantumAssemblerRecipes", true).getBoolean();
 
+        Assembler.blackList = configuration.getStringList("blacklist", "assembler", new String[] {}, "blacklisted items for assembler, like as minecraft:glass:4 or minecraft:stone");
+        Assembler.whiteList = configuration.getStringList("whitelist", "assembler", new String[] {}, "whitelisted items for assembler, like as minecraft:glass:4 or minecraft:stone");        
         configuration.save();
     }
 

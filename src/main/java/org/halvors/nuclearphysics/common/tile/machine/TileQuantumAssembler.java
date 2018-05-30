@@ -1,8 +1,8 @@
 package org.halvors.nuclearphysics.common.tile.machine;
 
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.WeightedRandom.Item;
 
 import org.halvors.nuclearphysics.api.recipe.QuantumAssemblerRecipes;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
@@ -99,20 +99,16 @@ public class TileQuantumAssembler extends TileInventoryMachine {
         final ItemStack itemStack = getStackInSlot(6);	// template and result
 
         if (itemStack != null) {
-        	if(Assembler.whiteList.length == 0 && Assembler.blackList.length == 0)
-        		if (QuantumAssemblerRecipes.hasRecipe(itemStack)) {	// if cloning enabled
-        			for (int i = 0; i <= 5; i++) {
-        				final ItemStack itemStackInSlot = getStackInSlot(i);
+       		if (checkForLists(itemStack)) {	// if cloning enabled
+       			for (int i = 0; i <= 5; i++) {
+       				final ItemStack itemStackInSlot = getStackInSlot(i);
 
-        				if (!OreDictionaryHelper.isDarkmatterCell(itemStackInSlot)) {
-        					return false;							// slots 0-5 must contains dark matter cells
-        				}
-        			}
-        		}
-        		else return false;	// item not in recipes
-        	else if(Assembler.whiteList.length > 0) {	// whitelist present
-        		checkForLists(itemStack);
-        	}
+       				if (!OreDictionaryHelper.isDarkmatterCell(itemStackInSlot)) {
+       					return false;							// slots 0-5 must contains dark matter cells
+       				}
+       			}
+       		}
+       		else return false;	// item not in recipes
             return itemStack.stackSize < 64;	// and target slot must have free space (if template have an NBT, cannot copy it)
         }
 
@@ -188,7 +184,7 @@ public class TileQuantumAssembler extends TileInventoryMachine {
     protected boolean inList(String[] list, ItemStack itemStack) {
     	String[] parts;
     	String meta = "0";
-    	net.minecraft.item.Item found;
+    	Item found;
     	
     	for(String itm_name : list) {
 			parts = itm_name.split(":");
