@@ -1,13 +1,12 @@
 package org.halvors.nuclearphysics.common.network.packet;
 
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import org.halvors.nuclearphysics.common.NuclearPhysics;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.common.network.PacketHandler;
 import org.halvors.nuclearphysics.common.tile.ITileRedstoneControl;
 import org.halvors.nuclearphysics.common.type.EnumRedstoneControl;
@@ -43,14 +42,11 @@ public class PacketRedstoneControl extends PacketLocation implements IMessage {
         @Override
         public IMessage onMessage(final PacketRedstoneControl message, final MessageContext messageContext) {
             final World world = PacketHandler.getWorld(messageContext);
+            final TileEntity tile = message.getPos().getTileEntity(world);
 
-            NuclearPhysics.getProxy().addScheduledTask(() -> {
-                final TileEntity tile = world.getTileEntity(message.getPos());
-
-                if (tile instanceof ITileRedstoneControl) {
-                    ((ITileRedstoneControl) tile).setRedstoneControl(message.redstoneControl);
-                }
-            }, world);
+            if (tile instanceof ITileRedstoneControl) {
+                ((ITileRedstoneControl) tile).setRedstoneControl(message.redstoneControl);
+            }
 
             return null;
         }

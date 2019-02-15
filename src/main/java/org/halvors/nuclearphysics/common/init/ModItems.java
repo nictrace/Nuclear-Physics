@@ -1,19 +1,16 @@
 package org.halvors.nuclearphysics.common.init;
 
-import net.minecraft.inventory.EntityEquipmentSlot;
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.IForgeRegistry;
 import net.minecraftforge.oredict.OreDictionary;
+import org.halvors.nuclearphysics.api.item.armor.IArmorSet.EntityEquipmentSlot;
 import org.halvors.nuclearphysics.common.item.ItemBase;
+import org.halvors.nuclearphysics.common.item.ItemBucketBase;
 import org.halvors.nuclearphysics.common.item.ItemCell;
 import org.halvors.nuclearphysics.common.item.ItemRadioactive;
-import org.halvors.nuclearphysics.common.item.armor.ItemArmorBase;
 import org.halvors.nuclearphysics.common.item.armor.ItemArmorHazmat;
 import org.halvors.nuclearphysics.common.item.particle.ItemAntimatterCell;
 import org.halvors.nuclearphysics.common.item.reactor.fission.ItemBreederFuel;
@@ -41,6 +38,9 @@ public class ModItems {
     public static final Item itemCircuitAdvanced = new ItemBase("circuit_advanced");
     public static final Item itemCircuitElite = new ItemBase("circuit_elite");
 
+    // Buckets
+    public static Item itemToxicWasteBucket = new ItemBucketBase("toxic_waste_bucket", ModFluids.toxicWaste);
+
     // Cells
     public static final Item itemAntimatterCell = new ItemAntimatterCell();
     public static final Item itemBreederFuel = new ItemBreederFuel();
@@ -58,81 +58,60 @@ public class ModItems {
     public static final ItemArmor itemHazmatLeggings = new ItemArmorHazmat("hazmat_leggings", EntityEquipmentSlot.LEGS);
     public static final ItemArmor itemHazmatBoots = new ItemArmorHazmat("hazmat_boots", EntityEquipmentSlot.FEET);
 
-    @EventBusSubscriber
-    public static class RegistrationHandler {
-        /**
-         * Register this mod's {@link Item}s.
-         *
-         * @param event The event
-         */
-        @SubscribeEvent
-        public static void registerItems(final RegistryEvent.Register<Item> event) {
-            final Item[] registerItems = {
-                    itemWrench,
-                    itemCopperWire,
-                    itemMotor,
+    public static void registerItems() {
+        GameRegistry.registerItem(itemWrench, "itemWrench");
+        GameRegistry.registerItem(itemCopperWire, "itemCopperWire");
+        GameRegistry.registerItem(itemMotor, "itemMotor");
 
-                    itemPlateBronze,
-                    itemPlateSteel,
+        GameRegistry.registerItem(itemPlateBronze, "itemPlateBronze");
+        GameRegistry.registerItem(itemPlateSteel, "itemPlateSteel");
 
-                    itemCircuitBasic,
-                    itemCircuitAdvanced,
-                    itemCircuitElite,
+        GameRegistry.registerItem(itemCircuitBasic, "itemCircuitBasic");
+        GameRegistry.registerItem(itemCircuitAdvanced, "itemCircuitAdvanced");
+        GameRegistry.registerItem(itemCircuitElite, "itemCircuitElite");
 
-                    itemAntimatterCell,
-                    itemBreederFuel,
-                    itemCell,
-                    itemDarkMatterCell,
-                    itemFissileFuel,
-                    itemUranium,
-                    itemYellowCake,
-                    itemHazmatMask,
-                    itemHazmatBody,
-                    itemHazmatLeggings,
-                    itemHazmatBoots
-            };
+        GameRegistry.registerItem(itemToxicWasteBucket, "itemToxicWasteBucket");
 
-            final IForgeRegistry<Item> registry = event.getRegistry();
+        GameRegistry.registerItem(itemAntimatterCell, "itemAntimatterCell");
+        GameRegistry.registerItem(itemBreederFuel, "itemBreederFuel");
+        GameRegistry.registerItem(itemCell, "itemCell");
+        GameRegistry.registerItem(itemDarkMatterCell, "itemDarkMatterCell");
+        GameRegistry.registerItem(itemFissileFuel, "itemFissileFuel");
+        GameRegistry.registerItem(itemUranium, "itemUranium");
+        GameRegistry.registerItem(itemYellowCake, "(itemYellowCake");
+        GameRegistry.registerItem(itemHazmatMask, "itemHazmatMask");
+        GameRegistry.registerItem(itemHazmatBody, "itemHazmatBody");
+        GameRegistry.registerItem(itemHazmatLeggings, "itemHazmatLeggings");
+        GameRegistry.registerItem(itemHazmatBoots, "itemHazmatBoots");
 
-            for (final Item item : registerItems) {
-                registry.register(item);
+        // Basic Components
+        OreDictionary.registerOre("plateBronze", itemPlateBronze);
+        OreDictionary.registerOre("plateSteel", itemPlateSteel);
 
-                if (item instanceof ItemBase) {
-                    ((ItemBase) item).registerItemModel();
-                } else if (item instanceof ItemArmorBase) {
-                    ((ItemArmorBase) item).registerItemModel();
-                }
+        OreDictionary.registerOre("circuitBasic", itemCircuitBasic);
+        OreDictionary.registerOre("circuitAdvanced", itemCircuitAdvanced);
+        OreDictionary.registerOre("circuitElite", itemCircuitElite);
 
-                items.add(item);
-            }
+        // Nuclear Physics
+        OreDictionary.registerOre("fuelBreeder", itemBreederFuel);
+        OreDictionary.registerOre("cellEmpty", itemCell);
+        OreDictionary.registerOre("cellDarkmatter", itemDarkMatterCell);
+        OreDictionary.registerOre("fuelFissile", itemFissileFuel);
 
-            // Basic Components
-            OreDictionary.registerOre("plateBronze", itemPlateBronze);
-            OreDictionary.registerOre("plateSteel", itemPlateSteel);
+        OreDictionary.registerOre("dustUranium", itemYellowCake);
 
-            OreDictionary.registerOre("circuitBasic", itemCircuitBasic);
-            OreDictionary.registerOre("circuitAdvanced", itemCircuitAdvanced);
-            OreDictionary.registerOre("circuitElite", itemCircuitElite);
+        OreDictionary.registerOre("bucketToxicWaste", itemToxicWasteBucket);
 
-            // Nuclear Physics
-            OreDictionary.registerOre("fuelBreeder", itemBreederFuel);
-            OreDictionary.registerOre("cellEmpty", itemCell);
-            OreDictionary.registerOre("cellDarkmatter", itemDarkMatterCell);
-            OreDictionary.registerOre("fuelFissile", itemFissileFuel);
+        OreDictionary.registerOre("cellDeuterium", FluidUtility.getFilledCell(ModFluids.deuterium));
+        OreDictionary.registerOre("cellTritium", FluidUtility.getFilledCell(ModFluids.tritium));
+        OreDictionary.registerOre("cellWater", FluidUtility.getFilledCell(FluidRegistry.WATER));
 
-            OreDictionary.registerOre("dustUranium", itemYellowCake);
+        OreDictionary.registerOre("ingotUranium", new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_235.ordinal()));
+        OreDictionary.registerOre("ingotUranium235", new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_235.ordinal()));
+        OreDictionary.registerOre("ingotUranium238", new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_238.ordinal()));
 
-            OreDictionary.registerOre("cellDeuterium", FluidUtility.getFilledCell(FluidRegistry.getFluid("deuterium")));
-            OreDictionary.registerOre("cellTritium", FluidUtility.getFilledCell(FluidRegistry.getFluid("tritium")));
-            OreDictionary.registerOre("cellWater", FluidUtility.getFilledCell(FluidRegistry.WATER));
-
-            OreDictionary.registerOre("ingotUranium", new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_235.ordinal()));
-            OreDictionary.registerOre("ingotUranium235", new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_235.ordinal()));
-            OreDictionary.registerOre("ingotUranium238", new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_238.ordinal()));
-
-            OreDictionary.registerOre("antimatter", new ItemStack(ModItems.itemAntimatterCell, 1, ItemAntimatterCell.EnumAntimatterCell.MILLIGRAM.ordinal()));
-            OreDictionary.registerOre("antimatterMilligram", new ItemStack(ModItems.itemAntimatterCell, 1, ItemAntimatterCell.EnumAntimatterCell.MILLIGRAM.ordinal()));
-            OreDictionary.registerOre("antimatterGram", new ItemStack(ModItems.itemAntimatterCell, 1, ItemAntimatterCell.EnumAntimatterCell.GRAM.ordinal()));
-        }
+        OreDictionary.registerOre("antimatter", new ItemStack(ModItems.itemAntimatterCell, 1, ItemAntimatterCell.EnumAntimatterCell.MILLIGRAM.ordinal()));
+        OreDictionary.registerOre("antimatterMilligram", new ItemStack(ModItems.itemAntimatterCell, 1, ItemAntimatterCell.EnumAntimatterCell.MILLIGRAM.ordinal()));
+        OreDictionary.registerOre("antimatterGram", new ItemStack(ModItems.itemAntimatterCell, 1, ItemAntimatterCell.EnumAntimatterCell.GRAM.ordinal()));
     }
 }

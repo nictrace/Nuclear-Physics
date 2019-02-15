@@ -2,9 +2,10 @@ package org.halvors.nuclearphysics.common.item.reactor.fission;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.FluidStack;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.api.item.IReactorComponent;
 import org.halvors.nuclearphysics.api.tile.IReactor;
 import org.halvors.nuclearphysics.common.ConfigurationManager.General;
@@ -24,8 +25,8 @@ public class ItemFissileFuel extends ItemFuel implements IReactorComponent {
         final World world = tile.getWorld();
         int reactors = 0;
 
-        for (final EnumFacing side : EnumFacing.values()) {
-            final TileEntity checkTile = world.getTileEntity(tile.getPos().offset(side));
+        for (final ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+            final TileEntity checkTile = new BlockPos(tile).offset(side).getTileEntity(world);
 
             // Check that the other reactors not only exist but also are running.
             if (checkTile instanceof IReactor && ((IReactor) checkTile).getTemperature() > breedingTemperature) {
@@ -40,7 +41,7 @@ public class ItemFissileFuel extends ItemFuel implements IReactorComponent {
                 // Cells can regain a random amount of health per tick.
                 final int healAmount = world.rand.nextInt(5);
 
-                itemStack.setItemDamage(Math.max(itemStack.getMetadata() - healAmount, 0));
+                itemStack.setMetadata(Math.max(itemStack.getMetadata() - healAmount, 0));
             }
         } else {
             // Fission - Begin the machine of heating.
@@ -48,12 +49,12 @@ public class ItemFissileFuel extends ItemFuel implements IReactorComponent {
 
             // Consume fuel.
             if (world.getWorldTime() % 20 == 0) {
-                itemStack.setItemDamage(Math.min(itemStack.getMetadata() + 1, itemStack.getMaxDamage()));
+                itemStack.setMetadata(Math.min(itemStack.getMetadata() + 1, itemStack.getMaxDurability()));
             }
 
             // Create toxic waste.
             if (General.allowToxicWaste && world.rand.nextFloat() > 0.5) {
-                reactor.getTank().fillInternal(new FluidStack(ModFluids.toxicWaste, 1), true);
+                reactor.getTank().fill(new FluidStack(ModFluids.toxicWaste, 1), true);
             }
         }
     }

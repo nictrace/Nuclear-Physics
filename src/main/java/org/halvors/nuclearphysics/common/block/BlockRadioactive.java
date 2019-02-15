@@ -1,21 +1,20 @@
 package org.halvors.nuclearphysics.common.block;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.halvors.nuclearphysics.client.render.particle.ParticleRadioactive;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.client.utility.RenderUtility;
 import org.halvors.nuclearphysics.common.ConfigurationManager.General;
 import org.halvors.nuclearphysics.common.init.ModPotions;
+import org.halvors.nuclearphysics.common.type.EnumParticleType;
 
 import java.util.List;
 import java.util.Random;
@@ -38,13 +37,14 @@ public class BlockRadioactive extends BlockBase {
 
     @Override
     @SideOnly(Side.CLIENT)
-    public void randomDisplayTick(final IBlockState state, final World world, final BlockPos pos, final Random random) {
+    public void randomDisplayTick(final World world, final int x, final int y, final int z, final Random random) {
         if ((spawnParticle || General.allowRadioactiveOres) && Minecraft.getMinecraft().gameSettings.particleSetting == 0) {
             int radius = 3;
 
             for (int i = 0; i < 2; i++) {
+                final BlockPos pos = new BlockPos(x, y, z);
                 final BlockPos newPos = pos.add(random.nextDouble() * radius - radius / 2, random.nextDouble() * radius - radius / 2, random.nextDouble() * radius - radius / 2);
-                RenderUtility.renderParticle(new ParticleRadioactive(world, newPos.getX(), newPos.getY(), newPos.getZ(), (random.nextDouble() - 0.5) / 2, (random.nextDouble() - 0.5) / 2, (random.nextDouble() - 0.5) / 2));
+                RenderUtility.renderParticle(EnumParticleType.RADIOACTIVE, world, newPos.getX(), newPos.getY(), newPos.getZ(), (random.nextDouble() - 0.5D) / 2.0D, (random.nextDouble() - 0.5D) / 2.0D, (random.nextDouble() - 0.5D) / 2.0D);
             }
         }
     }
@@ -53,10 +53,10 @@ public class BlockRadioactive extends BlockBase {
      * Ticks the block if it's been scheduled
      */
     @Override
-    public void updateTick(final World world, final BlockPos pos, final IBlockState state, final Random random) {
+    public void updateTick(final World world, final int x, final int y, final int z, final Random random) {
         if (!world.isRemote) {
             if (isRandomlyRadioactive || General.allowRadioactiveOres) {
-                final AxisAlignedBB bounds = new AxisAlignedBB(pos.getX() - radius, pos.getY() - radius, pos.getZ() - radius, pos.getX() + radius, pos.getY() + radius, pos.getZ() + radius);
+                final AxisAlignedBB bounds = AxisAlignedBB.getBoundingBox(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius);
                 final List<EntityLivingBase> entitiesNearby = world.getEntitiesWithinAABB(EntityLivingBase.class, bounds);
 
                 for (EntityLivingBase entity : entitiesNearby) {
@@ -66,16 +66,18 @@ public class BlockRadioactive extends BlockBase {
 
             if (canSpread) {
                 for (int side = 0; side < 4; side++) {
-                    final BlockPos newPos = new BlockPos(pos.getX() + random.nextInt(3) - 1, pos.getY() + random.nextInt(5) - 3, pos.getZ() + random.nextInt(3) - 1);
-                    final Block block = world.getBlockState(newPos).getBlock();
+                    int newX = x + random.nextInt(3) - 1;
+                    int newY = y + random.nextInt(5) - 3;
+                    int newZ = z + random.nextInt(3) - 1;
+                    final Block block = world.getBlock(newX, newY, newZ);
 
-                    if (random.nextFloat() > 0.4 && (block == Blocks.FARMLAND || block == Blocks.GRASS)) {
-                        world.setBlockState(newPos, getDefaultState());
+                    if (random.nextFloat() > 0.4 && (block == Blocks.farmland || block == Blocks.grass)) {
+                        world.setBlock(newX, newY, newZ, this);
                     }
                 }
 
                 if (random.nextFloat() > 0.85) {
-                    world.setBlockState(pos, Blocks.DIRT.getDefaultState());
+                    world.setBlock(x, y, z, Blocks.dirt);
                 }
             }
         }
@@ -85,7 +87,7 @@ public class BlockRadioactive extends BlockBase {
      * Called whenever an entity is walking on top of this block. Args: worldgen, x, y, z, entity
      */
     @Override
-    public void onEntityWalk(final World world, final BlockPos pos, final Entity entity) {
+    public void onEntityWalking(final World world, final int x, final int y, final int z, final Entity entity) {
         if (entity instanceof EntityLivingBase && (canWalkPoison || General.allowRadioactiveOres)) {
             ModPotions.poisonRadiation.poisonEntity((EntityLivingBase) entity);
         }

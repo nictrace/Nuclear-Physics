@@ -1,24 +1,28 @@
 package org.halvors.nuclearphysics.common;
 
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.Mod.Instance;
+import cpw.mods.fml.common.SidedProxy;
+import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStoppingEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.common.ForgeChunkManager.Ticket;
 import net.minecraftforge.common.ForgeChunkManager.Type;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.halvors.nuclearphysics.common.entity.EntityParticle;
+import org.halvors.nuclearphysics.common.event.handler.FulminationEventHandler;
+import org.halvors.nuclearphysics.common.event.handler.ItemEventHandler;
+import org.halvors.nuclearphysics.common.event.handler.PlayerEventHandler;
+import org.halvors.nuclearphysics.common.event.handler.ThermalEventHandler;
 import org.halvors.nuclearphysics.common.init.*;
 import org.halvors.nuclearphysics.common.network.PacketHandler;
 import org.halvors.nuclearphysics.common.science.grid.GridTicker;
@@ -27,7 +31,7 @@ import org.halvors.nuclearphysics.common.science.grid.ThermalGrid;
 @Mod(modid = Reference.ID,
      name = Reference.NAME,
      version = Reference.VERSION,
-	 dependencies = "after:" + Integration.BUILDCRAFT_CORE_ID + ";after:" + Integration.COFH_CORE_ID + ";after:" + Integration.MEKANISM_ID,
+	 dependencies = "after:" + Integration.BUILDCRAFT_CORE_ID + ";after:" + Integration.COFH_CORE_ID + ";after:" + Integration.MEKANISM_ID + ";after:" + Integration.REDSTONE_FLUX_ID,
 	 guiFactory = "org.halvors." + Reference.ID + ".client.gui.configuration.GuiConfiguationFactory")
 public class NuclearPhysics {
 	// The instance of your mod that Forge uses.
@@ -50,11 +54,10 @@ public class NuclearPhysics {
 	// Creative Tab
 	private static final CreativeTab creativeTab = new CreativeTab();
 
-	static {
-		FluidRegistry.enableUniversalBucket(); // Must be called before preInit
-	}
+	// Grids
+	private static final ThermalGrid thermalGrid = new ThermalGrid();
 
-	@EventHandler
+	@Mod.EventHandler
 	public void preInit(final FMLPreInitializationEvent event) {
 		// Initialize configuration.
         configuration = new Configuration(event.getSuggestedConfigurationFile());
@@ -63,7 +66,10 @@ public class NuclearPhysics {
 		ConfigurationManager.loadConfiguration(configuration);
 
 		// Call functions for adding blocks, items, etc.
-		ModCapabilities.registerCapabilities();
+		ModFluids.registerFluids();
+		ModBlocks.registerBlocks();
+		ModItems.registerItems();
+
 		ModEntities.registerEntities();
 		ModMessages.registerMessages();
 		ModRecipes.registerRecipes();
@@ -75,6 +81,12 @@ public class NuclearPhysics {
 
 	@EventHandler
 	public void init(final FMLInitializationEvent event) {
+		// Register event handlers.
+		MinecraftForge.EVENT_BUS.register(new FulminationEventHandler());
+		MinecraftForge.EVENT_BUS.register(new ItemEventHandler());
+		MinecraftForge.EVENT_BUS.register(new PlayerEventHandler());
+		MinecraftForge.EVENT_BUS.register(new ThermalEventHandler());
+
 		// Register the proxy as our GuiHandler to NetworkRegistry.
 		NetworkRegistry.INSTANCE.registerGuiHandler(this, proxy);
 

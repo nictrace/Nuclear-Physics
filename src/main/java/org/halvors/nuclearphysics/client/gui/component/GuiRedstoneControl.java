@@ -1,9 +1,9 @@
 package org.halvors.nuclearphysics.client.gui.component;
 
-import net.minecraft.init.SoundEvents;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.client.gui.IGuiWrapper;
 import org.halvors.nuclearphysics.client.sound.SoundHandler;
 import org.halvors.nuclearphysics.client.utility.RenderUtility;
@@ -73,8 +73,8 @@ public class GuiRedstoneControl extends GuiComponent {
                         ordinalToSet = 0;
                     }
 
-                    SoundHandler.playSound(SoundEvents.UI_BUTTON_CLICK);
-                    NuclearPhysics.getPacketHandler().sendToServer(new PacketRedstoneControl(tile.getPos(), EnumRedstoneControl.values()[ordinalToSet]));
+                    SoundHandler.playSound("gui.button.press");
+                    NuclearPhysics.getPacketHandler().sendToServer(new PacketRedstoneControl(new BlockPos(tile), EnumRedstoneControl.values()[ordinalToSet]));
                 }
 
                 break;

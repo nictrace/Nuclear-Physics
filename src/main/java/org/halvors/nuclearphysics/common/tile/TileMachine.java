@@ -2,18 +2,16 @@ package org.halvors.nuclearphysics.common.tile;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ITickable;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
-import org.halvors.nuclearphysics.common.block.states.BlockStateMachine.EnumMachine;
+import org.halvors.nuclearphysics.common.block.machine.BlockMachine.EnumMachine;
 import org.halvors.nuclearphysics.common.network.packet.PacketTileEntity;
 import org.halvors.nuclearphysics.common.type.EnumRedstoneControl;
 import org.halvors.nuclearphysics.common.utility.LanguageUtility;
 import org.halvors.nuclearphysics.common.utility.RedstoneUtility;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
-public class TileMachine extends TileConsumer implements ITickable, ITileRedstoneControl {
+public class TileMachine extends TileConsumer implements ITileRedstoneControl {
     private static final String NBT_OPERATING_TICKS = "operatingTicks";
     private static final String NBT_REDSTONE = "redstone";
     private static final String NBT_REDSTONE_CONTROL = "redstoneControl";
@@ -45,22 +43,19 @@ public class TileMachine extends TileConsumer implements ITickable, ITileRedston
     }
 
     @Override
-    @Nonnull
-    public NBTTagCompound writeToNBT(final NBTTagCompound tag) {
+    public void writeToNBT(final NBTTagCompound tag) {
         super.writeToNBT(tag);
 
         tag.setInteger(NBT_OPERATING_TICKS, operatingTicks);
         tag.setBoolean(NBT_REDSTONE, redstone);
         tag.setInteger(NBT_REDSTONE_CONTROL, redstoneControl.ordinal());
-
-        return tag;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public void update() {
-        if (!world.isRemote) {
+    public void updateEntity() {
+        if (!worldObj.isRemote) {
             redstoneLastTick = redstone;
         }
     }
@@ -71,7 +66,7 @@ public class TileMachine extends TileConsumer implements ITickable, ITileRedston
     public void handlePacketData(final ByteBuf dataStream) {
         super.handlePacketData(dataStream);
 
-        if (world.isRemote) {
+        if (worldObj.isRemote) {
             energyUsed = dataStream.readInt();
             operatingTicks = dataStream.readInt();
             redstone = dataStream.readBoolean();
@@ -121,8 +116,8 @@ public class TileMachine extends TileConsumer implements ITickable, ITileRedston
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public void updatePower() {
-        if (!world.isRemote) {
-            boolean power = world.isBlockIndirectlyGettingPowered(pos) > 0;
+        if (!worldObj.isRemote) {
+            boolean power = worldObj.isBlockIndirectlyGettingPowered(xCoord, yCoord, zCoord);
 
             if (redstone != power) {
                 redstone = power;

@@ -1,8 +1,8 @@
 package org.halvors.nuclearphysics.common.network.packet;
 
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import org.halvors.nuclearphysics.api.BlockPos;
 
 /**
  * This is a packet that provides a location, and is meant to be extended.
@@ -20,7 +20,7 @@ public abstract class PacketLocation implements IMessage {
 
 	@Override
 	public void fromBytes(final ByteBuf dataStream) {
-		this.pos = new BlockPos(dataStream.readInt(), dataStream.readInt(), dataStream.readInt());
+		pos = new BlockPos(dataStream.readInt(), dataStream.readInt(), dataStream.readInt());
 	}
 
 	@Override

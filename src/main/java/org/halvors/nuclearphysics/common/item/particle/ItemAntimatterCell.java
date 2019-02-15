@@ -1,43 +1,55 @@
 package org.halvors.nuclearphysics.common.item.particle;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.halvors.nuclearphysics.common.NuclearPhysics;
+import org.halvors.nuclearphysics.common.Reference;
 import org.halvors.nuclearphysics.common.item.ItemTooltip;
 import org.halvors.nuclearphysics.common.utility.LanguageUtility;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ItemAntimatterCell extends ItemTooltip {
+    @SideOnly(Side.CLIENT)
+    private IIcon iconGram;
+
     public ItemAntimatterCell() {
         super("antimatter_cell");
 
         setHasSubtypes(true);
-        setMaxDamage(0);
-    }
-
-    @Override
-    public void registerItemModel() {
-        for (final EnumAntimatterCell type : EnumAntimatterCell.values()) {
-            NuclearPhysics.getProxy().registerItemRenderer(this, type.ordinal(), name + "_" + type.getName());
-        }
+        setMaxDurability(0);
     }
 
     @Override
     @SideOnly(Side.CLIENT)
-    public void addInformation(final ItemStack itemStack, final EntityPlayer player, final List<String> list, final boolean flag) {
+    public void registerIcons(IIconRegister iconRegister) {
+        itemIcon = iconRegister.registerIcon(Reference.PREFIX + name + "_milligram");
+        iconGram = iconRegister.registerIcon(Reference.PREFIX + name + "_gram");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(int metadata) {
+        return metadata >= 1 ? iconGram : itemIcon;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack itemStack, final EntityPlayer player, final List list, final boolean flag) {
         list.add(LanguageUtility.transelate(getUnlocalizedName(itemStack) + ".tooltip"));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     @SideOnly(Side.CLIENT)
-    public void getSubItems(@Nonnull final Item item, final CreativeTabs tab, final List<ItemStack> list) {
+    public void getSubItems(final Item item, final CreativeTabs tab, final List list) {
         for (final EnumAntimatterCell type : EnumAntimatterCell.values()) {
             list.add(new ItemStack(item, 1, type.ordinal()));
         }

@@ -1,25 +1,23 @@
 package org.halvors.nuclearphysics.common.block.fluid;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.common.tile.reactor.fusion.TilePlasma;
 
-import javax.annotation.Nonnull;
 import java.util.Random;
 
 public class BlockFluidPlasma extends Block implements IFluidBlock {
@@ -33,51 +31,53 @@ public class BlockFluidPlasma extends Block implements IFluidBlock {
         fluid.setBlock(this);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Override
+    public boolean canRenderInPass(int pass) {
+        return true;
+    }
+
+    /*
     @Override
     public boolean canRenderInLayer(final IBlockState state, final @Nonnull BlockRenderLayer layer) {
         return layer == BlockRenderLayer.TRANSLUCENT;
     }
+    */
 
-    @SuppressWarnings("deprecation")
     @Override
     @SideOnly(Side.CLIENT)
-    public boolean isOpaqueCube(final IBlockState state) {
+    public boolean isOpaqueCube() {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     @SideOnly(Side.CLIENT)
-    public boolean shouldSideBeRendered(final IBlockState state, final @Nonnull IBlockAccess world, final @Nonnull BlockPos pos, final EnumFacing side) {
-        final IBlockState neighborState = world.getBlockState(pos.offset(side));
+    public boolean shouldSideBeRendered(final IBlockAccess world, final int x, final int y, final int z, final int side) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final BlockPos neighborPos = pos.offset(ForgeDirection.getOrientation(side));
+        final Block neighborBlock = neighborPos.getBlock(world);
 
-        return neighborState != state && super.shouldSideBeRendered(state, world, pos, side);
-
+        return neighborBlock != this && super.shouldSideBeRendered(world, x, y, z, side);
     }
 
     @Override
-    public int getLightValue(final @Nonnull IBlockState state, final IBlockAccess access, final @Nonnull BlockPos pos) {
+    public int getLightValue(final IBlockAccess world, final int x, final int y, final int z) {
         return fluid.getLuminosity();
     }
 
     @Override
-    public boolean isBlockSolid(final IBlockAccess access, final @Nonnull BlockPos pos, final EnumFacing side) {
-        return false;
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AxisAlignedBB getCollisionBoundingBox(final IBlockState state, final @Nonnull World world, final @Nonnull BlockPos pos) {
-        return NULL_AABB;
-    }
-
-    @Override
-    public boolean canCollideCheck(final IBlockState state, final boolean fullHit) {
+    public boolean isBlockSolid(final IBlockAccess world, final int x, final int y, final int z, final int side) {
         return false;
     }
 
     @Override
-    public void onEntityCollidedWithBlock(final World world, final BlockPos pos, final IBlockState state, final Entity entity) {
+    public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+        return AxisAlignedBB.getBoundingBox(0, 0, 0, 0, 0, 0);
+    }
+
+    @Override
+    public void onEntityCollidedWithBlock(final World world, final int x, final int y, final int z, final Entity entity) {
         entity.attackEntityFrom(DamageSource.inFire, 100);
     }
 
@@ -87,13 +87,12 @@ public class BlockFluidPlasma extends Block implements IFluidBlock {
     }
 
     @Override
-    public boolean hasTileEntity(final IBlockState state) {
+    public boolean hasTileEntity(final int metadata) {
         return true;
     }
 
     @Override
-    @Nonnull
-    public TileEntity createTileEntity(final @Nonnull World world, final @Nonnull IBlockState state) {
+    public TileEntity createTileEntity(final World world, final int metadata) {
         return new TilePlasma();
     }
 
@@ -105,17 +104,17 @@ public class BlockFluidPlasma extends Block implements IFluidBlock {
     }
 
     @Override
-    public FluidStack drain(final World world, final BlockPos pos, final boolean doDrain) {
+    public FluidStack drain(final World world, final int x, final int y, final int z, final boolean doDrain) {
         return null;
     }
 
     @Override
-    public boolean canDrain(final World world, final BlockPos pos) {
+    public boolean canDrain(final World world, final int x, final int y, final int z) {
         return false;
     }
 
     @Override
-    public float getFilledPercentage(final World world, final BlockPos pos) {
-        return Fluid.BUCKET_VOLUME;
+    public float getFilledPercentage(final World world, final int x, final int y, final int z) {
+        return FluidContainerRegistry.BUCKET_VOLUME;
     }
 }

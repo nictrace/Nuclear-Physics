@@ -1,13 +1,12 @@
 package org.halvors.nuclearphysics.common.item.reactor.fission;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import org.halvors.nuclearphysics.common.item.ItemRadioactive;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ItemFuel extends ItemRadioactive {
@@ -23,15 +22,15 @@ public class ItemFuel extends ItemRadioactive {
         super(name);
 
         setMaxStackSize(1);
-        setMaxDamage(decay);
+        setMaxDurability(decay);
         setNoRepair();
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("unchecked")
     @Override
     @SideOnly(Side.CLIENT)
-    public void getSubItems(@Nonnull final Item item, final CreativeTabs tab, final List<ItemStack> list) {
+    public void getSubItems(final Item item, final CreativeTabs tab, final List list) {
         list.add(new ItemStack(item));
-        list.add(new ItemStack(item, 1, getMaxDamage() - 1));
+        list.add(new ItemStack(item, 1, getMaxDurability() - 1));
     }
 }

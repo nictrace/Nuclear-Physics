@@ -8,8 +8,6 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import org.halvors.nuclearphysics.common.tile.TileBase;
 
-import javax.annotation.Nonnull;
-
 public class ContainerBase<T extends TileBase> extends Container {
     protected final IInventory inventory;
     protected final T tile;
@@ -25,13 +23,13 @@ public class ContainerBase<T extends TileBase> extends Container {
     }
 
     @Override
-    public boolean canInteractWith(@Nonnull final EntityPlayer player) {
-        return inventory.isUsableByPlayer(player);
+    public boolean canInteractWith(final EntityPlayer player) {
+        return inventory.isUseableByPlayer(player);
     }
 
     @Override
     public ItemStack transferStackInSlot(final EntityPlayer player, final int index) {
-        final Slot slot = inventorySlots.get(index);
+        final Slot slot = (Slot) inventorySlots.get(index);
 
         if (slot != null && slot.getStack() != null) {
             final ItemStack itemStack = slot.getStack();

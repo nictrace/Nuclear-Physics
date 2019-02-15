@@ -1,42 +1,68 @@
 package org.halvors.nuclearphysics.common.block.reactor;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import org.halvors.nuclearphysics.api.BlockPos;
+import org.halvors.nuclearphysics.common.Reference;
 import org.halvors.nuclearphysics.common.block.BlockRotatable;
 import org.halvors.nuclearphysics.common.item.block.reactor.ItemBlockThermometer;
 import org.halvors.nuclearphysics.common.tile.reactor.TileThermometer;
 import org.halvors.nuclearphysics.common.utility.InventoryUtility;
 import org.halvors.nuclearphysics.common.utility.WrenchUtility;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.List;
 
 public class BlockThermometer extends BlockRotatable {
+    @SideOnly(Side.CLIENT)
+    private static IIcon iconSide;
+
     public BlockThermometer() {
-        super("thermometer", Material.PISTON);
+        super("thermometer", Material.piston);
 
         setHardness(0.6F);
     }
 
     @Override
-    public boolean onBlockActivated(final World world, final BlockPos pos, final IBlockState state, final EntityPlayer player, final EnumHand hand, final ItemStack itemStack, final EnumFacing side, final float hitX, final float hitY, final float hitZ) {
-        final TileEntity tile = world.getTileEntity(pos);
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(final IIconRegister iconRegister) {
+        super.registerIcons(iconRegister);
+
+        iconSide = iconRegister.registerIcon(Reference.PREFIX + "machine");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIcon(final int side, final int metadata) {
+        switch (side) {
+            case 1:
+                return blockIcon;
+
+            default:
+                return iconSide;
+        }
+    }
+
+    @Override
+    public boolean onBlockActivated(final World world, final int x, final int y, final int z, final EntityPlayer player, final int side, final float hitX, final float hitY, final float hitZ) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final TileEntity tile = pos.getTileEntity(world);
+        final ItemStack itemStack = player.getHeldItem();
 
         if (tile instanceof TileThermometer) {
             final TileThermometer tileThermometer = (TileThermometer) tile;
 
             if (itemStack != null) {
-                if (WrenchUtility.hasUsableWrench(player, hand, pos)) {
+                if (WrenchUtility.hasUsableWrench(player, pos)) {
                     if (player.isSneaking()) {
                         tileThermometer.setThreshold(tileThermometer.getThershold() - 10);
                     } else {
@@ -60,8 +86,9 @@ public class BlockThermometer extends BlockRotatable {
     }
 
     @Override
-    public void onBlockPlacedBy(final World world, final BlockPos pos, final IBlockState state, final EntityLivingBase entity, final ItemStack itemStack) {
-        final TileEntity tile = world.getTileEntity(pos);
+    public void onBlockPlacedBy(final World world, final int x, final int y, final int z, final EntityLivingBase entity, final ItemStack itemStack) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final TileEntity tile = pos.getTileEntity(world);
 
         // Fetch saved coordinates from ItemBlockThermometer and apply them to the block.
         if (tile instanceof TileThermometer) {
@@ -70,29 +97,31 @@ public class BlockThermometer extends BlockRotatable {
             tileThermometer.setTrackCoordinate(itemBlockThermometer.getSavedCoordinate(itemStack));
         }
 
-        super.onBlockPlacedBy(world, pos, state, entity, itemStack);
+        super.onBlockPlacedBy(world, x, y, z, entity, itemStack);
     }
 
     @Override
-    public boolean removedByPlayer(@Nonnull final IBlockState state, final World world, @Nonnull final BlockPos pos, @Nonnull final EntityPlayer player, final boolean willHarvest) {
+    public boolean removedByPlayer(final World world, final EntityPlayer player, final int x, final int y, final int z, final boolean willHarvest) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final Block block = pos.getBlock(world);
+
         if (!player.capabilities.isCreativeMode && !world.isRemote && willHarvest) {
-            final ItemStack itemStack = InventoryUtility.getItemStackWithNBT(state, world, pos);
+            final ItemStack itemStack = InventoryUtility.getItemStackWithNBT(block, world, pos);
             InventoryUtility.dropItemStack(world, pos, itemStack);
         }
 
-        return world.setBlockToAir(pos);
+        return pos.setBlockToAir(world);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public boolean canProvidePower(final IBlockState state) {
+    public boolean canProvidePower() {
         return true;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public int getWeakPower(final IBlockState state, final IBlockAccess world, final BlockPos pos, final EnumFacing side) {
-        final TileEntity tile = world.getTileEntity(pos);
+    public int isProvidingWeakPower(final IBlockAccess world, final int x, final int y, final int z, final int side) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final TileEntity tile = pos.getTileEntity(world);
 
         if (tile instanceof TileThermometer) {
             final TileThermometer tileThermometer = (TileThermometer) tile;
@@ -100,18 +129,16 @@ public class BlockThermometer extends BlockRotatable {
             return tileThermometer.isProvidingPower ? 15 : 0;
         }
 
-        return super.getWeakPower(state, world, pos, side);
+        return super.isProvidingWeakPower(world, x, y, z, side);
     }
 
     @Override
-    @Nonnull
-    public List<ItemStack> getDrops(final IBlockAccess world, final BlockPos pos, final @Nonnull IBlockState state, final int fortune) {
+    public ArrayList<ItemStack> getDrops(final World world, final int x, final int y, final int z, final int metadata, final int fortune) {
         return new ArrayList<>();
     }
 
     @Override
-    @Nonnull
-    public TileEntity createTileEntity(@Nonnull final World world, @Nonnull final IBlockState state) {
+    public TileEntity createTileEntity(final World world, final int metadata) {
         return new TileThermometer();
     }
 }

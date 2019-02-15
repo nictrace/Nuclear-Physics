@@ -1,10 +1,10 @@
 package org.halvors.nuclearphysics.common.capabilities.fluid;
 
+import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 import java.util.List;
 

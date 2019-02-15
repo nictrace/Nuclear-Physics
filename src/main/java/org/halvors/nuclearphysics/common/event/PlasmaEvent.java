@@ -1,8 +1,8 @@
 package org.halvors.nuclearphysics.common.event;
 
-import net.minecraft.util.math.BlockPos;
+import cpw.mods.fml.common.eventhandler.Cancelable;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import org.halvors.nuclearphysics.api.BlockPos;
 
 public class PlasmaEvent extends WorldEventBase {
     private int temperature;

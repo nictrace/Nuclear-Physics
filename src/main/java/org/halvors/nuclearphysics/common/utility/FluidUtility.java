@@ -1,53 +1,50 @@
 package org.halvors.nuclearphysics.common.utility;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.IBlockAccess;
+import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fluids.*;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.common.init.ModItems;
 import org.halvors.nuclearphysics.common.item.ItemCell;
 
 public class FluidUtility {
     public static boolean isEmptyContainer(final ItemStack itemStack) {
-        return itemStack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, null) && FluidUtil.getFluidContained(itemStack) == null;
+        return FluidContainerRegistry.isEmptyContainer(itemStack);
     }
 
     public static boolean isFilledContainer(final ItemStack itemStack) {
-        if (itemStack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, null)) {
-            final FluidStack fluidStack = FluidUtil.getFluidContained(itemStack);
+        final Item item = itemStack.getItem();
 
-            if (fluidStack != null) {
-                return fluidStack.amount > 0;
-            }
+        if (item instanceof IFluidContainerItem) {
+            final IFluidContainerItem fluidContainerItem = (IFluidContainerItem) item;
+            FluidStack fluidStack = fluidContainerItem.getFluid(itemStack);
+
+            return fluidStack != null && fluidStack.amount > 0;
         }
 
-        return false;
+        return FluidContainerRegistry.isFilledContainer(itemStack);
     }
 
     public static boolean isFilledContainer(final ItemStack itemStack, final Fluid fluid) {
-        if (itemStack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, null)) {
-            final FluidStack fluidStack = FluidUtil.getFluidContained(itemStack);
+        final Item item = itemStack.getItem();
+        FluidStack fluidStack;
 
-            if (fluid != null && fluidStack != null) {
-                return fluid == fluidStack.getFluid() && fluidStack.amount > 0;
-            }
+        if (item instanceof IFluidContainerItem) {
+            final IFluidContainerItem fluidContainerItem = (IFluidContainerItem) item;
+            fluidStack = fluidContainerItem.getFluid(itemStack);
+        } else {
+            fluidStack = FluidContainerRegistry.getFluidForFilledItem(itemStack);
+        }
+
+        if (fluid != null && fluidStack != null) {
+            return fluid == fluidStack.getFluid() && fluidStack.amount > 0;
         }
 
         return false;
-    }
-
-    public static boolean isFilledContainerEqual(final ItemStack itemStackInput, final ItemStack itemStackOutput) {
-        final FluidStack fluidStackInput = FluidUtil.getFluidContained(itemStackInput);
-        final FluidStack fluidStackOutput = FluidUtil.getFluidContained(itemStackOutput);
-
-        return fluidStackInput != null && fluidStackInput.isFluidEqual(fluidStackOutput);
     }
 
     public static ItemStack getFilledCell(final Fluid fluid) {
@@ -55,25 +52,28 @@ public class FluidUtility {
     }
 
     public static ItemStack getFilledContainer(final ItemStack itemStack, final FluidStack fluidStack) {
-        final IFluidHandler fluidHandler = FluidUtil.getFluidHandler(itemStack);
+        final Item item = itemStack.getItem();
 
-        if (fluidHandler != null) {
-            fluidHandler.fill(fluidStack, true);
+        if (item instanceof IFluidContainerItem) {
+            final IFluidContainerItem fluidContainerItem = (IFluidContainerItem) item;
+            fluidContainerItem.fill(itemStack, fluidStack, true);
         }
 
         return itemStack;
     }
 
-    public static void transferFluidToNeighbors(final World world, final BlockPos pos, final IFluidHandler from) {
+    public static void transferFluidToNeighbors(final IBlockAccess world, final BlockPos pos, final IFluidHandler from) {
         if (from != null) {
-            for (EnumFacing side : EnumFacing.values()) {
-                final IFluidHandler to = FluidUtil.getFluidHandler(world, pos.offset(side), side.getOpposite());
+            for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+                final BlockPos neighborPos = pos.offset(side);
+                final TileEntity tile = neighborPos.getTileEntity(world);
 
-                if (to != null) {
-                    final FluidStack fluidStack = from.drain(Integer.MAX_VALUE, false);
+                if (tile instanceof IFluidHandler) {
+                    final IFluidHandler to = (IFluidHandler) tile;
+                    final FluidStack fluidStack = from.drain(side.getOpposite(), Integer.MAX_VALUE, false);
 
-                    if (fluidStack != null && to.fill(fluidStack, false) > 0) {
-                        to.fill(from.drain(fluidStack, true), true);
+                    if (fluidStack != null && to.fill(side.getOpposite(), fluidStack, false) > 0) {
+                        to.fill(side.getOpposite(), from.drain(side.getOpposite(), fluidStack, true), true);
                     }
                 }
             }
@@ -81,40 +81,52 @@ public class FluidUtility {
     }
 
     // Does all the work needed to fill or drain an item of fluid when a player clicks on the block.
-    public static boolean playerActivatedFluidItem(final World world, final BlockPos pos, final EntityPlayer player, final ItemStack itemStack, final EnumFacing side) {
-        final IFluidHandler fluidHandler = FluidUtil.getFluidHandler(world, pos, side);
+    public static boolean playerActivatedFluidItem(final IBlockAccess world, final BlockPos pos, final EntityPlayer player, final ItemStack itemStack, final ForgeDirection side) {
+        final TileEntity tile = pos.getTileEntity(world);
 
-        if (itemStack != null && fluidHandler != null) {
-            if (isFilledContainer(itemStack)) {
-                final FluidStack fluidStack = FluidUtil.getFluidContained(itemStack);
+        if (tile instanceof IFluidHandler) {
+            final IFluidHandler fluidHandler = (IFluidHandler) tile;
 
-                if (fluidHandler.fill(fluidStack, false) > 0) {
-                    if (!player.isCreative()) {
-                        player.inventory.decrStackSize(player.inventory.currentItem, 1);
-                    }
+            if (itemStack != null) {
+                if (isFilledContainer(itemStack)) {
+                    final Item item = itemStack.getItem();
 
-                    fluidHandler.fill(fluidStack, true);
+                    if (item instanceof IFluidContainerItem) {
+                        final FluidStack fluidStack = ((IFluidContainerItem) item).getFluid(itemStack);
 
-                    return true;
-                }
-            } else if (isEmptyContainer(itemStack)) {
-                final FluidStack available = fluidHandler.drain(Integer.MAX_VALUE, false);
+                        if (fluidHandler.fill(side, fluidStack, false) > 0) {
+                            if (!player.capabilities.isCreativeMode) {
+                                player.inventory.decrStackSize(player.inventory.currentItem, 1);
+                            }
 
-                if (available != null) {
-                    ItemStack itemStackFilled = itemStack.copy();
-                    itemStackFilled.stackSize = 1;
-                    itemStackFilled = getFilledContainer(itemStackFilled, available);
-                    final FluidStack fluidStack = FluidUtil.getFluidContained(itemStackFilled);
+                            fluidHandler.fill(side, fluidStack, true);
 
-                    if (fluidStack != null) {
-                        fluidHandler.drain(fluidStack.amount, true);
-
-                        if (!player.isCreative()) {
-                            ItemHandlerHelper.giveItemToPlayer(player, itemStackFilled);
-                            player.inventory.decrStackSize(player.inventory.currentItem, 1);
+                            return true;
                         }
+                    }
+                } else if (isEmptyContainer(itemStack)) {
+                    final FluidStack available = fluidHandler.drain(side, Integer.MAX_VALUE, false);
 
-                        return true;
+                    if (available != null) {
+                        ItemStack itemStackFilled = itemStack.copy();
+                        itemStackFilled.stackSize = 1;
+                        itemStackFilled = getFilledContainer(itemStackFilled, available);
+                        final Item itemFilled = itemStackFilled.getItem();
+
+                        if (itemFilled instanceof IFluidContainerItem) {
+                            final FluidStack fluidStack = ((IFluidContainerItem) itemFilled).getFluid(itemStackFilled);
+
+                            if (fluidStack != null) {
+                                fluidHandler.drain(side, fluidStack.amount, true);
+
+                                if (!player.capabilities.isCreativeMode) {
+                                    player.inventory.addItemStackToInventory(itemStackFilled);
+                                    player.inventory.decrStackSize(player.inventory.currentItem, 1);
+                                }
+
+                                return true;
+                            }
+                        }
                     }
                 }
             }

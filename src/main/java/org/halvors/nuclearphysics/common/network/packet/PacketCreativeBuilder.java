@@ -1,17 +1,17 @@
 package org.halvors.nuclearphysics.common.network.packet;
 
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import org.halvors.nuclearphysics.common.NuclearPhysics;
+import net.minecraftforge.common.util.ForgeDirection;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.common.block.debug.BlockCreativeBuilder;
 import org.halvors.nuclearphysics.common.network.PacketHandler;
+import org.halvors.nuclearphysics.common.type.Pair;
 import org.halvors.nuclearphysics.common.utility.PlayerUtility;
 
 import java.util.HashMap;
@@ -53,25 +53,24 @@ public class PacketCreativeBuilder extends PacketLocation implements IMessage {
         public IMessage onMessage(final PacketCreativeBuilder message, final MessageContext messageContext) {
             final World world = PacketHandler.getWorld(messageContext);
             final EntityPlayer player = PacketHandler.getPlayer(messageContext);
+            final BlockPos pos = message.getPos();
 
-            NuclearPhysics.getProxy().addScheduledTask(() -> {
-                final BlockPos pos = message.getPos();
+            if (!world.isRemote && PlayerUtility.isOp(player)) {
+                try {
+                    if (message.size > 0) {
+                        // TODO: Implement dynamic facing, not just NORTH.
+                        final HashMap<BlockPos, Pair<Block, Integer>> map = BlockCreativeBuilder.getSchematic(message.schematicId).getStructure(ForgeDirection.NORTH, message.size);
 
-                if (!world.isRemote && PlayerUtility.isOp(player)) {
-                    try {
-                        if (message.size > 0) {
-                            // TODO: Implement dynamic facing, not just NORTH.
-                            final HashMap<BlockPos, IBlockState> map = BlockCreativeBuilder.getSchematic(message.schematicId).getStructure(EnumFacing.NORTH, message.size);
+                        for (final Entry<BlockPos, Pair<Block, Integer>> entry : map.entrySet()) {
+                            final BlockPos placePos = entry.getKey().add(pos);
 
-                            for (final Entry<BlockPos, IBlockState> entry : map.entrySet()) {
-                                world.setBlockState(entry.getKey().add(pos), entry.getValue());
-                            }
+                            placePos.setBlock(entry.getValue().getLeft(), entry.getValue().getRight(), 2, world);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            }, world);
+            }
 
             return null;
         }

@@ -1,21 +1,20 @@
 package org.halvors.nuclearphysics.client.gui;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.inventory.Container;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import org.halvors.nuclearphysics.client.gui.component.IGuiComponent;
 import org.halvors.nuclearphysics.client.utility.RenderUtility;
 import org.halvors.nuclearphysics.common.type.EnumResource;
 import org.halvors.nuclearphysics.common.utility.ResourceUtility;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +49,7 @@ public class GuiComponentContainer<T extends TileEntity> extends GuiContainer im
     protected void drawGuiContainerBackgroundLayer(final float partialTick, final int mouseX, final int mouseY) {
         RenderUtility.bindTexture(defaultResource);
 
-        GlStateManager.color(1, 1, 1, 1);
+        GL11.glColor4d(1, 1, 1, 1);
 
         final int guiWidth = (width - xSize) / 2;
         final int guiHeight = (height - ySize) / 2;
@@ -66,7 +65,7 @@ public class GuiComponentContainer<T extends TileEntity> extends GuiContainer im
     }
 
     @Override
-    protected void mouseClicked(final int mouseX, final int mouseY, final int button) throws IOException {
+    protected void mouseClicked(final int mouseX, final int mouseY, final int button) {
         final int xAxis = (mouseX - (width - xSize) / 2);
         final int yAxis = (mouseY - (height - ySize) / 2);
 
@@ -106,7 +105,7 @@ public class GuiComponentContainer<T extends TileEntity> extends GuiContainer im
     }
 
     @Override
-    public void handleMouseInput() throws IOException {
+    public void handleMouseInput() {
         super.handleMouseInput();
 
         final int xAxis = Mouse.getEventX() * width / mc.displayWidth - getXPos();
@@ -140,8 +139,8 @@ public class GuiComponentContainer<T extends TileEntity> extends GuiContainer im
     }
 
     @Override
-    public void drawTexturedRectFromIcon(final int x, final int y, final TextureAtlasSprite icon, final int w, final int h) {
-        drawTexturedModalRect(x, y, icon, w, h);
+    public void drawTexturedRectFromIcon(final int x, final int y, final IIcon icon, final int w, final int h) {
+        drawTexturedModelRectFromIcon(x, y, icon, w, h);
     }
 
     @Override

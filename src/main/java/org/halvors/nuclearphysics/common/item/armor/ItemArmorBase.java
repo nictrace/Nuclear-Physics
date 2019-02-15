@@ -2,7 +2,6 @@ package org.halvors.nuclearphysics.common.item.armor;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
@@ -12,29 +11,22 @@ import org.halvors.nuclearphysics.api.item.armor.IArmorSet;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
 import org.halvors.nuclearphysics.common.Reference;
 
-import javax.annotation.Nonnull;
-
 public class ItemArmorBase extends ItemArmor implements IArmorSet, ISpecialArmor {
     protected final String name;
 
     public ItemArmorBase(final String name, final ArmorMaterial material, final EntityEquipmentSlot slot) {
-        super(material, 0, slot);
+        super(material, 0, slot.ordinal());
 
         this.name = name;
 
         setUnlocalizedName(Reference.ID + "." + name);
-        setRegistryName(Reference.ID, name);
+        setTextureName(Reference.PREFIX + name);
         setCreativeTab(NuclearPhysics.getCreativeTab());
     }
 
-    public void registerItemModel() {
-        NuclearPhysics.getProxy().registerItemRenderer(this, 0, name);
-    }
-
     @Override
-    @Nonnull
-    public EntityEquipmentSlot getEquipmentSlot() {
-        return armorType;
+    public EntityEquipmentSlot getArmorType() {
+        return EntityEquipmentSlot.values()[armorType];
     }
 
     @Override
@@ -44,7 +36,7 @@ public class ItemArmorBase extends ItemArmor implements IArmorSet, ISpecialArmor
         if (item instanceof IArmorSet) {
             final IArmorSet armorSet = (IArmorSet) item;
 
-            return armorSet.getEquipmentSlot() == armorType;
+            return armorSet.getArmorType() == getArmorType();
         }
 
         return false;

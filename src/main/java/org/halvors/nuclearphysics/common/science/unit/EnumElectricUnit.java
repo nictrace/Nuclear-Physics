@@ -5,7 +5,7 @@ import java.util.List;
 
 public enum EnumElectricUnit {
     JOULE("Joule", "J"),
-    FORGE_ENERGY("Forge Energy", "FE"),
+    REDSTONE_FLUX("Redstone Flux", "RF"),
     TESLA("Tesla", "T"),
     ELECTRICAL_UNITS("Electrical Unit", "EU");
 

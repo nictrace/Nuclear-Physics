@@ -1,15 +1,12 @@
 package org.halvors.nuclearphysics.common.block.debug.schematic;
 
-import net.minecraft.block.BlockLever;
-import net.minecraft.block.BlockLever.EnumOrientation;
-import net.minecraft.block.BlockPistonBase;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.Axis;
-import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.util.ForgeDirection;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.api.schematic.ISchematic;
 import org.halvors.nuclearphysics.common.init.ModBlocks;
+import org.halvors.nuclearphysics.common.type.Pair;
 import org.halvors.nuclearphysics.common.utility.VectorUtility;
 
 import java.util.HashMap;
@@ -21,8 +18,8 @@ public class SchematicFissionReactor implements ISchematic {
     }
 
     @Override
-    public HashMap<BlockPos, IBlockState> getStructure(EnumFacing facing, int size) {
-        final HashMap<BlockPos, IBlockState> map = new HashMap<>();
+    public HashMap<BlockPos, Pair<Block, Integer>> getStructure(ForgeDirection facing, int size) {
+        final HashMap<BlockPos, Pair<Block, Integer>>  map = new HashMap<>();
         final int radius = 2;
 
         // We do not support high reactor towers yet. Forcing height.
@@ -36,30 +33,29 @@ public class SchematicFissionReactor implements ISchematic {
 
                     if (y < size - 1) {
                         if (targetPos.getDistance(leveledPos.getX(), leveledPos.getY(), leveledPos.getZ()) == 2) {
-                            map.put(targetPos, ModBlocks.blockControlRod.getDefaultState());
+                            map.put(targetPos, new Pair<>(ModBlocks.blockControlRod, 0));
 
                             // Place piston base to push control rods in.
                             final BlockPos offsetPos = VectorUtility.normalize(new BlockPos(x, 0, z));
 
-                            for (EnumFacing side : EnumFacing.values()) {
-                                if (offsetPos.getX() == side.getFrontOffsetX() && offsetPos.getY() == side.getFrontOffsetY() && offsetPos.getZ() == side.getFrontOffsetZ()) {
+                            for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+                                if (offsetPos.getX() == side.offsetX && offsetPos.getY() == side.offsetY && offsetPos.getZ() == side.offsetZ) {
                                     facing = side.getOpposite();
                                 }
                             }
 
                             final BlockPos pos = targetPos.add(offsetPos);
-                            map.put(pos, Blocks.STICKY_PISTON.getDefaultState().withProperty(BlockPistonBase.FACING, facing));
-                            map.put(pos.offset(facing.getOpposite()), Blocks.LEVER.getDefaultState().withProperty(BlockLever.FACING, (facing.getAxis() == Axis.X ? EnumOrientation.UP_X : EnumOrientation.UP_Z)));
+                            map.put(pos, new Pair<>(Blocks.sticky_piston, facing.ordinal()));
+                            map.put(pos.offset(facing.getOpposite()), new Pair<>(Blocks.lever, 0));
                         } else if (x == -radius || x == radius || z == -radius || z == radius) {
-                            map.put(targetPos, Blocks.GLASS.getDefaultState());
+                            map.put(targetPos, new Pair<>(Blocks.glass, 0));
                         } else if (x == 0 && z == 0) {
-                            map.put(targetPos, ModBlocks.blockReactorCell.getDefaultState());
+                            map.put(targetPos, new Pair<>(ModBlocks.blockReactorCell, 0));
                         } else {
-                            map.put(targetPos, Blocks.WATER.getDefaultState());
+                            map.put(targetPos, new Pair<>(Blocks.water, 0));
                         }
                     } else if (targetPos.getDistance(leveledPos.getX(), leveledPos.getY(), leveledPos.getZ()) < 2) {
-                        map.put(targetPos, ModBlocks.blockElectricTurbine.getDefaultState());
-
+                        map.put(targetPos, new Pair<>(ModBlocks.blockElectricTurbine, 0));
                     }
                 }
             }

@@ -11,7 +11,6 @@ import org.halvors.nuclearphysics.common.event.PlasmaEvent.PlasmaSpawnEvent;
 import org.halvors.nuclearphysics.common.init.ModFluids;
 import org.halvors.nuclearphysics.common.science.grid.ThermalGrid;
 import org.halvors.nuclearphysics.common.tile.TileBase;
-
 import javax.annotation.Nonnull;
 
 public class TilePlasma extends TileBase implements ITickable {
@@ -53,6 +52,7 @@ public class TilePlasma extends TileBase implements ITickable {
 
                 if (temperature <= PLASMA_MAX_TEMPERATURE / 10) {
                     // At this temperature, set block to fire.
+                    // TODO:check first for non-air substrate
                     world.setBlockState(pos, Blocks.FIRE.getDefaultState());
                 } else {
                     for (final EnumFacing side : EnumFacing.values()) {
@@ -63,6 +63,7 @@ public class TilePlasma extends TileBase implements ITickable {
 
                             if (!(tile instanceof TilePlasma)) {
                                 final PlasmaSpawnEvent event = new PlasmaSpawnEvent(world, spreadPos, temperature);
+
                                 MinecraftForge.EVENT_BUS.post(event);
 
                                 if (!event.isCanceled()) {
@@ -73,7 +74,7 @@ public class TilePlasma extends TileBase implements ITickable {
                                     final TileEntity spreadTile = world.getTileEntity(spreadPos);
 
                                     if (spreadTile instanceof TilePlasma) {
-                                        temperature = event.getTemperature();
+                                        temperature = event.getTemperature();	// TODO: maybe change only if destination temp is lower?
                                     }
                                 }
                             }
@@ -82,7 +83,7 @@ public class TilePlasma extends TileBase implements ITickable {
                             tile = world.getTileEntity(spreadPos);
 
                             if (tile instanceof TilePlasma) {
-                                ((TilePlasma) tile).setTemperature(temperature);
+                                ((TilePlasma) tile).setTemperature(temperature); // TODO: maybe check too?
                             }
                         }
                     }

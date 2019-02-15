@@ -1,12 +1,12 @@
 package org.halvors.nuclearphysics.common.block.debug.schematic;
 
-import net.minecraft.block.BlockPistonBase;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.util.ForgeDirection;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.api.schematic.ISchematic;
 import org.halvors.nuclearphysics.common.init.ModBlocks;
+import org.halvors.nuclearphysics.common.type.Pair;
 import org.halvors.nuclearphysics.common.utility.VectorUtility;
 
 import java.util.HashMap;
@@ -18,14 +18,14 @@ public class SchematicBreedingReactor implements ISchematic {
     }
 
     @Override
-    public HashMap<BlockPos, IBlockState> getStructure(EnumFacing facing, int size) {
-        final HashMap<BlockPos, IBlockState> map = new HashMap<>();
+    public HashMap<BlockPos, Pair<Block, Integer>> getStructure(final ForgeDirection facing, final int size) {
+        final HashMap<BlockPos, Pair<Block, Integer>> map = new HashMap<>();
 
         int radius = Math.max(size, 2);
 
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
-                map.put(new BlockPos(x, 0, z), Blocks.WATER.getDefaultState());
+                map.put(new BlockPos(x, 0, z), new Pair<>(Blocks.water, 0));
             }
         }
 
@@ -37,21 +37,21 @@ public class SchematicBreedingReactor implements ISchematic {
 
                 if (VectorUtility.getMagnitude(pos) <= 2) {
                     if (!((x == -radius || x == radius) && (z == -radius || z == radius))) {
-                        map.put(new BlockPos(x, 0, z), ModBlocks.blockReactorCell.getDefaultState());
-                        map.put(new BlockPos(x, -1, z), ModBlocks.blockThermometer.getDefaultState());
-                        map.put(new BlockPos(x, -3, z), ModBlocks.blockSiren.getDefaultState());
-                        map.put(new BlockPos(x, -2, z), Blocks.REDSTONE_WIRE.getDefaultState());
+                        map.put(new BlockPos(x, 0, z), new Pair<>(ModBlocks.blockReactorCell, 0));
+                        map.put(new BlockPos(x, -1, z), new Pair<>(ModBlocks.blockThermometer, 0));
+                        map.put(new BlockPos(x, -3, z), new Pair<>(ModBlocks.blockSiren, 0));
+                        map.put(new BlockPos(x, -2, z), new Pair<>(Blocks.redstone_wire, 0));
                     } else {
-                        map.put(new BlockPos(x, -1, z), ModBlocks.blockControlRod.getDefaultState());
-                        map.put(new BlockPos(x, -2, z), Blocks.STICKY_PISTON.getDefaultState().withProperty(BlockPistonBase.FACING, EnumFacing.UP));
+                        map.put(new BlockPos(x, -1, z), new Pair<>(ModBlocks.blockControlRod, 0));
+                        map.put(new BlockPos(x, -2, z), new Pair<>(Blocks.sticky_piston, ForgeDirection.UP.ordinal()));
                     }
                 }
             }
         }
 
-        map.put(BlockPos.ORIGIN.down(2), Blocks.STONE.getDefaultState());
-        map.put(BlockPos.ORIGIN.down(3), Blocks.STONE.getDefaultState());
-        map.put(BlockPos.ORIGIN, ModBlocks.blockReactorCell.getDefaultState());
+        map.put(BlockPos.ORIGIN.down(2), new Pair<>(Blocks.stone, 0));
+        map.put(BlockPos.ORIGIN.down(3), new Pair<>(Blocks.stone, 0));
+        map.put(BlockPos.ORIGIN, new Pair<>(ModBlocks.blockReactorCell, 0));
 
         return map;
     }

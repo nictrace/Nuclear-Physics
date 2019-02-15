@@ -1,17 +1,12 @@
 package org.halvors.nuclearphysics.common;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.network.IGuiHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.network.IGuiHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import org.halvors.nuclearphysics.common.container.machine.ContainerChemicalExtractor;
 import org.halvors.nuclearphysics.common.container.machine.ContainerGasCentrifuge;
 import org.halvors.nuclearphysics.common.container.machine.ContainerNuclearBoiler;
@@ -43,25 +38,9 @@ public class CommonProxy implements IGuiHandler {
 
 	}
 
-	public void registerBlockRenderer(final Block block, final IProperty property, final String name) {
-
-	}
-
-	public void registerBlockRendererAndIgnore(final Block block, final IProperty property) {
-
-	}
-
-	public void registerItemRenderer(final Item item, int metadata, final String id) {
-
-	}
-
-	public void registerItemRenderer(final Item item, int metadata, final String id, final String variant) {
-
-	}
-
 	@Override
 	public Object getServerGuiElement(final int id, final EntityPlayer player, final World world, final int x, final int y, final int z) {
-		final TileEntity tile = world.getTileEntity(new BlockPos(x, y, z));
+		final TileEntity tile = world.getTileEntity(x, y, z);
 
 		if (tile instanceof TileParticleAccelerator) {
 			return new ContainerParticleAccelerator(player.inventory, (TileParticleAccelerator) tile);
@@ -90,7 +69,7 @@ public class CommonProxy implements IGuiHandler {
 	}
 
 	public void addScheduledTask(final Runnable runnable, final IBlockAccess world) {
-		((WorldServer) world).addScheduledTask(runnable);
+		//((WorldServer) world).addScheduledTask(runnable);
 	}
 
 	public boolean isClient() {

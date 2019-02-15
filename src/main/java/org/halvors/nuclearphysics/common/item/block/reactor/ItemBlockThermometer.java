@@ -1,21 +1,15 @@
 package org.halvors.nuclearphysics.common.item.block.reactor;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.common.Reference;
 import org.halvors.nuclearphysics.common.item.block.ItemBlockTooltip;
 import org.halvors.nuclearphysics.common.type.EnumColor;
@@ -23,7 +17,6 @@ import org.halvors.nuclearphysics.common.utility.InventoryUtility;
 import org.halvors.nuclearphysics.common.utility.LanguageUtility;
 import org.halvors.nuclearphysics.common.utility.VectorUtility;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ItemBlockThermometer extends ItemBlockTooltip {
@@ -40,7 +33,7 @@ public class ItemBlockThermometer extends ItemBlockTooltip {
     @SuppressWarnings("unchecked")
     @Override
     @SideOnly(Side.CLIENT)
-    public void addInformation(@Nonnull final ItemStack itemStack, @Nonnull final EntityPlayer player, @Nonnull final List<String> list, final boolean flag) {
+    public void addInformation(final ItemStack itemStack, final EntityPlayer player, final List list, final boolean flag) {
         final BlockPos pos = getSavedCoordinate(itemStack);
 
         if (pos != null) {
@@ -54,8 +47,10 @@ public class ItemBlockThermometer extends ItemBlockTooltip {
     }
 
     @Override
-    public boolean placeBlockAt(@Nonnull final ItemStack itemStack, @Nonnull final EntityPlayer player, final World world, @Nonnull final BlockPos pos, final EnumFacing side, final float hitX, final float hitY, final float hitZ, @Nonnull final IBlockState state) {
-        final TileEntity tile = world.getTileEntity(pos);
+    public boolean placeBlockAt(final ItemStack stack, final EntityPlayer player, final World world, final int x, final int y, final int z, final int side, final float hitX, final float hitY, final float hitZ, final int metadata) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final TileEntity tile = pos.getTileEntity(world);
+        final ItemStack itemStack = player.getHeldItem();
 
         if (!world.isRemote && tile != null) {
             // Inject essential tile data.
@@ -71,45 +66,41 @@ public class ItemBlockThermometer extends ItemBlockTooltip {
             tile.readFromNBT(setNbt);
         }
 
-        return super.placeBlockAt(itemStack, player, world, pos, side, hitX, hitY, hitZ, state);
+        return super.placeBlockAt(itemStack, player, world, x, y, z, side, hitX, hitY, hitZ, metadata);
     }
 
     @Override
-    @Nonnull
-    public ActionResult<ItemStack> onItemRightClick(@Nonnull final ItemStack itemStack, final World world, final EntityPlayer player, final EnumHand hand) {
+    public ItemStack onItemRightClick(final ItemStack itemStack, final World world, final EntityPlayer player) {
         if (!world.isRemote) {
             setSavedCoordinate(itemStack, null);
-            player.sendMessage(new TextComponentString(EnumColor.DARK_BLUE + "[" + Reference.NAME + "] " + EnumColor.GREY + LanguageUtility.transelate("tooltip.clearedTrackingCoordinate") + "."));
+            player.addChatMessage(new ChatComponentText(EnumColor.DARK_BLUE + "[" + Reference.NAME + "] " + EnumColor.GREY + LanguageUtility.transelate("tooltip.clearedTrackingCoordinate") + "."));
 
-            return new ActionResult<>(EnumActionResult.SUCCESS, itemStack);
+            return itemStack;
         }
 
-        return super.onItemRightClick(itemStack, world, player, hand);
+        return super.onItemRightClick(itemStack, world, player);
     }
 
-    /*
-     * This is a workaround for buggy onItemUseFirst() function in 1.10.
-     * TODO: Review this for 1.11 and 1.12.
-     */
     @Override
-    public boolean doesSneakBypassUse(final ItemStack stack, final IBlockAccess world, final BlockPos pos, final EntityPlayer player) {
+    public boolean doesSneakBypassUse(final World world, final int x, final int y, final int z, final EntityPlayer player) {
         return true;
     }
 
     @Override
-    @Nonnull
-    public EnumActionResult onItemUse(final ItemStack itemStack, @Nonnull final EntityPlayer player, final World world, @Nonnull final BlockPos pos, final EnumHand hand, @Nonnull final EnumFacing facing, final float hitX, final float hitY, final float hitZ) {
+    public boolean onItemUse(final ItemStack itemStack, final EntityPlayer player, final World world, final int x, final int y, final int z, final int facing, final float hitX, final float hitY, final float hitZ) {
+        final BlockPos pos = new BlockPos(x, y, z);
+
         if (player.isSneaking()) {
             if (!world.isRemote) {
                 setSavedCoordinate(itemStack, pos);
 
-                player.sendMessage(new TextComponentString(EnumColor.DARK_BLUE + "[" + Reference.NAME + "] " + EnumColor.GREY + LanguageUtility.transelate("tooltip.trackingCoordinate") + ": " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()));
+                player.addChatMessage(new ChatComponentText(EnumColor.DARK_BLUE + "[" + Reference.NAME + "] " + EnumColor.GREY + LanguageUtility.transelate("tooltip.trackingCoordinate") + ": " + x + ", " + y + ", " + z));
             }
 
-            return EnumActionResult.SUCCESS;
+            return true;
         }
 
-        return super.onItemUse(itemStack, player, world, pos, hand, facing, hitX, hitY, hitZ);
+        return super.onItemUse(itemStack, player, world, x, y, z, facing, hitX, hitY, hitZ);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

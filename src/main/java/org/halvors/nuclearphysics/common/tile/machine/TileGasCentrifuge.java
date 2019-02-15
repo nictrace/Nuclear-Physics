@@ -3,16 +3,11 @@ package org.halvors.nuclearphysics.common.tile.machine;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fluids.*;
 import org.halvors.nuclearphysics.common.ConfigurationManager.General;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
-import org.halvors.nuclearphysics.common.block.states.BlockStateMachine.EnumMachine;
+import org.halvors.nuclearphysics.common.block.machine.BlockMachine.EnumMachine;
 import org.halvors.nuclearphysics.common.capabilities.energy.EnergyStorage;
 import org.halvors.nuclearphysics.common.capabilities.fluid.GasTank;
 import org.halvors.nuclearphysics.common.init.ModFluids;
@@ -22,18 +17,16 @@ import org.halvors.nuclearphysics.common.network.packet.PacketTileEntity;
 import org.halvors.nuclearphysics.common.tile.TileInventoryMachine;
 import org.halvors.nuclearphysics.common.utility.EnergyUtility;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
-public class TileGasCentrifuge extends TileInventoryMachine {
+public class TileGasCentrifuge extends TileInventoryMachine implements IFluidHandler {
     private static final String NBT_TANK = "tank";
     private static final int ENERGY_PER_TICK = 20000;
     public static final int TICKS_REQUIRED = 60 * 20;
 
     public float rotation = 0;
 
-    private final GasTank tank = new GasTank(Fluid.BUCKET_VOLUME * 5) {
+    private final GasTank tank = new GasTank(FluidContainerRegistry.BUCKET_VOLUME * 5) {
         @Override
         public int fill(final FluidStack resource, final boolean doFill) {
             if (resource.isFluidEqual(ModFluids.fluidStackUraniumHexaflouride)) {
@@ -42,11 +35,6 @@ public class TileGasCentrifuge extends TileInventoryMachine {
 
             return 0;
         }
-
-        @Override
-        public boolean canDrain() {
-            return false;
-        }
     };
 
     public TileGasCentrifuge() {
@@ -54,85 +42,30 @@ public class TileGasCentrifuge extends TileInventoryMachine {
     }
 
     public TileGasCentrifuge(final EnumMachine type) {
-        super(type);
+        super(type, 4);
 
         energyStorage = new EnergyStorage(ENERGY_PER_TICK * 2);
-        inventory = new ItemStackHandler(4) {
-            @Override
-            protected void onContentsChanged(final int slot) {
-                super.onContentsChanged(slot);
-                markDirty();
-            }
-
-            private boolean isItemValidForSlot(final int slot, final ItemStack itemStack) {
-                switch (slot) {
-                    case 0: // Battery input slot.
-                        return EnergyUtility.canBeDischarged(itemStack);
-
-                    // TODO: Add uranium hexaflouride container here.
-                    /*
-                    case 1: // Input tank drain slot.
-                        return OreDictionaryHelper.isEmptyCell(itemStack);
-                    */
-
-                    case 2: // Item output slot.
-                        return itemStack.getItem() == ModItems.itemUranium && itemStack.getMetadata() == EnumUranium.URANIUM_235.ordinal();
-
-                    case 3: // Item output slot.
-                        return itemStack.getItem() == ModItems.itemUranium && itemStack.getMetadata() == EnumUranium.URANIUM_238.ordinal();
-                }
-
-                return false;
-            }
-
-            @Override
-            public ItemStack insertItem(final int slot, final ItemStack stack, final boolean simulate) {
-                if (!isItemValidForSlot(slot, stack)) {
-                    return stack;
-                }
-
-                return super.insertItem(slot, stack, simulate);
-            }
-        };
     }
 
     @Override
     public void readFromNBT(final NBTTagCompound tag) {
         super.readFromNBT(tag);
 
-        CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY.readNBT(tank, null, tag.getTag(NBT_TANK));
+        tank.readFromNBT(tag.getCompoundTag(NBT_TANK));
     }
 
     @Override
-    public NBTTagCompound writeToNBT(final NBTTagCompound tag) {
+    public void writeToNBT(final NBTTagCompound tag) {
         super.writeToNBT(tag);
 
-        tag.setTag(NBT_TANK, CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY.writeNBT(tank, null));
-
-        return tag;
-    }
-
-    @Override
-    public boolean hasCapability(@Nonnull final Capability<?> capability, @Nullable final EnumFacing facing) {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    @Nonnull
-    public <T> T getCapability(@Nonnull final Capability<T> capability, @Nullable final EnumFacing facing) {
-        if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
-            return (T) tank;
-        }
-
-        return super.getCapability(capability, facing);
+        tag.setTag(NBT_TANK, tank.writeToNBT(new NBTTagCompound()));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public void update() {
-        super.update();
+    public void updateEntity() {
+        super.updateEntity();
 
         if (operatingTicks > 0) {
             rotation += 0.45;
@@ -140,7 +73,7 @@ public class TileGasCentrifuge extends TileInventoryMachine {
             rotation = 0;
         }
 
-        if (!world.isRemote) {
+        if (!worldObj.isRemote) {
             EnergyUtility.discharge(0, this);
 
             if (canFunction() && canProcess() && energyStorage.extractEnergy(ENERGY_PER_TICK, true) >= ENERGY_PER_TICK) {
@@ -158,7 +91,7 @@ public class TileGasCentrifuge extends TileInventoryMachine {
                 reset();
             }
 
-            if (world.getWorldTime() % 10 == 0) {
+            if (worldObj.getWorldTime() % 10 == 0) {
                 NuclearPhysics.getPacketHandler().sendToReceivers(new PacketTileEntity(this), this);
             }
         }
@@ -170,7 +103,7 @@ public class TileGasCentrifuge extends TileInventoryMachine {
     public void handlePacketData(final ByteBuf dataStream) {
         super.handlePacketData(dataStream);
 
-        if (world.isRemote) {
+        if (worldObj.isRemote) {
             tank.handlePacketData(dataStream);
         }
     }
@@ -186,11 +119,25 @@ public class TileGasCentrifuge extends TileInventoryMachine {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public IFluidTank getTank() {
-        return tank;
-    }
+    @Override
+    public boolean isItemValidForSlot(int slot, ItemStack itemStack) {
+        switch (slot) {
+            case 0: // Battery input slot.
+                return EnergyUtility.canBeDischarged(itemStack);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // TODO: Add uranium hexaflouride container here.
+            //case 1: // Input tank drain slot.
+            //    return OreDictionaryHelper.isEmptyCell(itemStack);
+
+            case 2: // Item output slot.
+                return itemStack.getItem() == ModItems.itemUranium && itemStack.getMetadata() == EnumUranium.URANIUM_235.ordinal();
+
+            case 3: // Item output slot.
+                return itemStack.getItem() == ModItems.itemUranium && itemStack.getMetadata() == EnumUranium.URANIUM_238.ordinal();
+        }
+
+        return false;
+    }
 
     /*
     @Override
@@ -211,6 +158,48 @@ public class TileGasCentrifuge extends TileInventoryMachine {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    @Override
+    public int fill(ForgeDirection from, FluidStack resource, boolean doFill) {
+        if (resource != null && canFill(from, resource.getFluid())) {
+            return tank.fill(resource, doFill);
+        }
+
+        return 0;
+    }
+
+    @Override
+    public FluidStack drain(ForgeDirection from, FluidStack resource, boolean doDrain) {
+        return null;
+    }
+
+    @Override
+    public FluidStack drain(ForgeDirection from, int maxDrain, boolean doDrain) {
+        return null;
+    }
+
+    @Override
+    public boolean canFill(ForgeDirection from, Fluid fluid) {
+        return fluid.getID() == ModFluids.uraniumHexaflouride.getID();
+    }
+
+    @Override
+    public boolean canDrain(ForgeDirection from, Fluid fluid) {
+        return false;
+    }
+
+    @Override
+    public FluidTankInfo[] getTankInfo(ForgeDirection from) {
+        return new FluidTankInfo[] { tank.getInfo() };
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public IFluidTank getTank() {
+        return tank;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     public boolean canProcess() {
         final FluidStack fluidStack = tank.getFluid();
 
@@ -219,12 +208,12 @@ public class TileGasCentrifuge extends TileInventoryMachine {
 
     public void process() {
         if (canProcess()) {
-            tank.drainInternal(General.uraniumHexaflourideRatio, true);
+            tank.drain(General.uraniumHexaflourideRatio, true);
 
-            if (world.rand.nextFloat() > 0.6) {
-                inventory.insertItem(2, new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_235.ordinal()), false);
+            if (worldObj.rand.nextFloat() > 0.6) {
+                incrStackSize(2, new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_235.ordinal()));
             } else {
-                inventory.insertItem(3, new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_238.ordinal()), false);
+                incrStackSize(3, new ItemStack(ModItems.itemUranium, 1, EnumUranium.URANIUM_238.ordinal()));
             }
         }
     }

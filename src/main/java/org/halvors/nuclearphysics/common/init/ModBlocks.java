@@ -1,26 +1,19 @@
 package org.halvors.nuclearphysics.common.init;
 
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.event.RegistryEvent.Register;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.common.registry.IForgeRegistry;
 import net.minecraftforge.oredict.OreDictionary;
-import org.halvors.nuclearphysics.common.Reference;
-import org.halvors.nuclearphysics.common.block.BlockBase;
 import org.halvors.nuclearphysics.common.block.debug.BlockCreativeBuilder;
 import org.halvors.nuclearphysics.common.block.machine.BlockMachine;
+import org.halvors.nuclearphysics.common.block.machine.BlockMachine.EnumMachine;
 import org.halvors.nuclearphysics.common.block.particle.BlockFulminationGenerator;
 import org.halvors.nuclearphysics.common.block.reactor.*;
 import org.halvors.nuclearphysics.common.block.reactor.fission.BlockControlRod;
 import org.halvors.nuclearphysics.common.block.reactor.fission.BlockRadioactiveGrass;
 import org.halvors.nuclearphysics.common.block.reactor.fission.BlockUraniumOre;
 import org.halvors.nuclearphysics.common.block.reactor.fusion.BlockElectromagnet;
-import org.halvors.nuclearphysics.common.block.states.BlockStateMachine.EnumMachine;
 import org.halvors.nuclearphysics.common.item.block.ItemBlockMetadata;
 import org.halvors.nuclearphysics.common.item.block.ItemBlockTooltip;
 import org.halvors.nuclearphysics.common.item.block.reactor.ItemBlockThermometer;
@@ -48,76 +41,24 @@ public class ModBlocks {
     public static final Block blockReactorCell = new BlockReactorCell();
     public static final Block blockCreativeBuilder = new BlockCreativeBuilder();
 
-    @EventBusSubscriber
-    public static class RegistrationHandler {
-        /**
-         * Register this mod's {@link Block}s.
-         *
-         * @param event The event
-         */
-        @SubscribeEvent
-        public static void registerBlocks(final Register<Block> event) {
-            final IForgeRegistry<Block> registry = event.getRegistry();
+    public static void registerBlocks() {
+        GameRegistry.registerBlock(blockControlRod, ItemBlockTooltip.class, "blockControlRod");
+        GameRegistry.registerBlock(blockElectricTurbine, ItemBlockTooltip.class, "blockElectricTurbine");
+        GameRegistry.registerBlock(blockElectromagnet, ItemBlockMetadata.class, "blockElectromagnet,");
+        GameRegistry.registerBlock(blockFulmination, ItemBlockTooltip.class, "blockFulmination");
+        GameRegistry.registerBlock(blockGasFunnel, ItemBlockTooltip.class, "blockGasFunnel");
+        GameRegistry.registerBlock(blockMachine, ItemBlockMetadata.class, "blockMachine");
+        GameRegistry.registerBlock(blockSiren, ItemBlockTooltip.class, "blockSiren");
+        GameRegistry.registerBlock(blockThermometer, ItemBlockThermometer.class, "blockThermometer");
+        GameRegistry.registerBlock(blockUraniumOre, ItemBlockTooltip.class, "blockUraniumOre");
+        GameRegistry.registerBlock(blockRadioactiveGrass, ItemBlockTooltip.class, "blockRadioactiveGrass");
+        GameRegistry.registerBlock(blockReactorCell, ItemBlockTooltip.class, "blockReactorCell");
+        GameRegistry.registerBlock(blockCreativeBuilder, ItemBlockTooltip.class, "blockCreativeBuilder");
 
-            final Block[] registerBlocks = {
-                    blockControlRod,
-                    blockElectricTurbine,
-                    blockElectromagnet,
-                    blockFulmination,
-                    blockGasFunnel,
-                    blockMachine,
-                    blockSiren,
-                    blockThermometer,
-                    blockUraniumOre,
-                    blockRadioactiveGrass,
-                    blockReactorCell,
-                    blockCreativeBuilder
-            };
+        OreDictionary.registerOre("oreUranium", blockUraniumOre);
+        OreDictionary.registerOre("blockRadioactiveGrass", blockRadioactiveGrass);
 
-            registry.registerAll(registerBlocks);
-
-            registerTileEntities();
-        }
-
-        /**
-         * Register this mod's {@link ItemBlock}s.
-         *
-         * @param event The event
-         */
-        @SubscribeEvent
-        public static void registerItemBlocks(final Register<Item> event) {
-            final ItemBlock[] registerItems = {
-                    new ItemBlockTooltip(blockControlRod),
-                    new ItemBlockTooltip(blockElectricTurbine),
-                    new ItemBlockMetadata(blockElectromagnet),
-                    new ItemBlockTooltip(blockFulmination),
-                    new ItemBlockTooltip(blockGasFunnel),
-                    new ItemBlockMetadata(blockMachine),
-                    new ItemBlockTooltip(blockSiren),
-                    new ItemBlockThermometer(blockThermometer),
-                    new ItemBlockTooltip(blockUraniumOre),
-                    new ItemBlockTooltip(blockRadioactiveGrass),
-                    new ItemBlockTooltip(blockReactorCell),
-                    new ItemBlockTooltip(blockCreativeBuilder)
-            };
-
-            final IForgeRegistry<Item> registry = event.getRegistry();
-
-            for (final ItemBlock item : registerItems) {
-                final BlockBase block = (BlockBase) item.getBlock();
-                //final ResourceLocation registryName = Preconditions.checkNotNull(block.getRegistryName(), "Block %s has null registry name", block);
-                //registry.register(item.setRegistryName(registryName));
-                registry.register(item);
-
-                block.registerItemModel(item);
-                block.registerBlockModel();
-
-                itemBlocks.add(item);
-            }
-
-            OreDictionary.registerOre("oreUranium", blockUraniumOre);
-            OreDictionary.registerOre("blockRadioactiveGrass", blockRadioactiveGrass);
-        }
+        registerTileEntities();
     }
 
     private static void registerTileEntities() {
@@ -138,6 +79,6 @@ public class ModBlocks {
     private static void registerTile(final Class<? extends TileEntity> tileClass) {
         final String name = tileClass.getSimpleName().replaceAll("(.)(\\p{Lu})", "$1_$2").toLowerCase();
 
-        GameRegistry.registerTileEntity(tileClass, Reference.PREFIX + name);
+        GameRegistry.registerTileEntity(tileClass, name);
     }
 }

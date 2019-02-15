@@ -1,12 +1,18 @@
 package org.halvors.nuclearphysics.api.item.armor;
 
-import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 
 import java.util.EnumSet;
 
 public interface IArmorSet {
-    EntityEquipmentSlot getEquipmentSlot();
+    enum EntityEquipmentSlot {
+        HEAD,
+        CHEST,
+        LEGS,
+        FEET
+    }
+
+    EntityEquipmentSlot getArmorType();
 
     boolean isArmorPartOfSet(ItemStack itemStack);
 

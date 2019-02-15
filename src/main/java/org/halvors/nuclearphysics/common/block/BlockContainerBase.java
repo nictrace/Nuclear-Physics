@@ -1,7 +1,6 @@
 package org.halvors.nuclearphysics.common.block;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 
 public class BlockContainerBase extends BlockBase {
     public BlockContainerBase(final String name, final Material material) {
@@ -9,7 +8,7 @@ public class BlockContainerBase extends BlockBase {
     }
 
     @Override
-    public boolean hasTileEntity(final IBlockState state) {
+    public boolean hasTileEntity(final int metadata) {
         return true;
     }
 }

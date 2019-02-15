@@ -2,13 +2,13 @@ package org.halvors.nuclearphysics.common.science.grid;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.ForgeDirection;
+import org.halvors.nuclearphysics.api.BlockPos;
+import org.halvors.nuclearphysics.api.fluid.IBoilHandler;
 import org.halvors.nuclearphysics.api.tile.IReactor;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
-import org.halvors.nuclearphysics.common.capabilities.CapabilityBoilHandler;
 import org.halvors.nuclearphysics.common.event.ThermalEvent.ThermalUpdateEvent;
 import org.halvors.nuclearphysics.common.science.physics.ThermalPhysics;
 import org.halvors.nuclearphysics.common.type.Pair;
@@ -54,45 +54,45 @@ public class ThermalGrid implements IGrid {
             final World world = key.getLeft();
             final BlockPos pos = key.getRight();
 
-            NuclearPhysics.getProxy().addScheduledTask(() -> {
-                // Deal with different block types.
-                final double currentTemperature = getTemperature(world, pos);
+            // Deal with different block types.
+            final double currentTemperature = getTemperature(world, pos);
 
-                if (currentTemperature < 0) {
-                    thermalSource.remove(key);
-                } else {
-                    final double deltaFromEquilibrium = getDefaultTemperature(world, pos) - currentTemperature;
-                    final TileEntity tile = world.getTileEntity(pos);
-                    final TileEntity tileUp = world.getTileEntity(pos.up());
-                    final boolean isReactor = tile instanceof IReactor || tileUp != null && tileUp.hasCapability(CapabilityBoilHandler.BOIL_HANDLER_CAPABILITY, EnumFacing.DOWN);
+            if (currentTemperature < 0) {
+                thermalSource.remove(key);
+            } else {
+                final double deltaFromEquilibrium = getDefaultTemperature(world, pos) - currentTemperature;
+                final TileEntity tile = pos.getTileEntity(world);
+                final TileEntity tileUp = pos.up().getTileEntity(world);
+                final boolean isReactor = tile instanceof IReactor || tileUp instanceof IBoilHandler;
 
-                    final ThermalUpdateEvent event = new ThermalUpdateEvent(world, pos, currentTemperature, deltaFromEquilibrium, DELTA_TIME, isReactor);
-                    MinecraftForge.EVENT_BUS.post(event);
+                final ThermalUpdateEvent event = new ThermalUpdateEvent(world, pos, currentTemperature, deltaFromEquilibrium, DELTA_TIME, isReactor);
+                MinecraftForge.EVENT_BUS.post(event);
 
-                    addTemperature(world, pos, (deltaFromEquilibrium > 0 ? 1 : -1) * Math.min(Math.abs(deltaFromEquilibrium), Math.abs(event.getHeatLoss())));
+                addTemperature(world, pos, (deltaFromEquilibrium > 0 ? 1 : -1) * Math.min(Math.abs(deltaFromEquilibrium), Math.abs(event.getHeatLoss())));
 
-                    // Spread heat to surrounding.
-                    for (EnumFacing side : EnumFacing.values()) {
-                        final BlockPos adjacentPos = pos.offset(side);
+                // Spread heat to surrounding.
+                for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+                    BlockPos adjacentPos = pos.offset(side);
 
-                        final double deltaTemperature = getTemperature(world, pos) - getTemperature(world, adjacentPos);
-                        final Material adjacentMaterial = world.getBlockState(adjacentPos).getBlock().getBlockState().getBaseState().getMaterial();
-                        final double deltaSpread = (adjacentMaterial.isSolid() ? SPREAD : SPREAD / 2) * DELTA_TIME;
+                    final double deltaTemperature = getTemperature(world, pos) - getTemperature(world, adjacentPos);
+                    final Material adjacentMaterial = adjacentPos.getBlock(world).getMaterial();
+                    final double deltaSpread = (adjacentMaterial.isSolid() ? SPREAD : SPREAD / 2) * DELTA_TIME;
 
-                        if (deltaTemperature > 0) {
-                            addTemperature(world, adjacentPos, deltaTemperature * deltaSpread);
-                            addTemperature(world, pos, -deltaTemperature * deltaSpread);
-                        }
+                    if (deltaTemperature > 0) {
+                        addTemperature(world, adjacentPos, deltaTemperature * deltaSpread);
+                        addTemperature(world, pos, -deltaTemperature * deltaSpread);
                     }
                 }
-            }, world);
+            }
         }
     }
 
+    @Override
     public boolean canUpdate() {
         return !NuclearPhysics.getProxy().isPaused();
     }
 
+    @Override
     public boolean continueUpdate() {
         return true;
     }

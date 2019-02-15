@@ -1,11 +1,11 @@
 package org.halvors.nuclearphysics.common.utility;
 
+import cofh.api.energy.IEnergyContainerItem;
+import cofh.api.energy.IEnergyReceiver;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.energy.CapabilityEnergy;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
 
 public class EnergyUtility {
     /**
@@ -14,21 +14,22 @@ public class EnergyUtility {
      * @param tile - TileEntity the item is being charged in.
      */
     public static void discharge(final int slot, final TileEntity tile) {
-        if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, null)) {
-            final IEnergyStorage energyStorage = tile.getCapability(CapabilityEnergy.ENERGY, null);
+        if (tile instanceof IEnergyReceiver) {
+            final IEnergyReceiver energyReceiver = (IEnergyReceiver) tile;
 
-            if (tile.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
-                final IItemHandler inventory = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+            if (tile instanceof IInventory) {
+                final IInventory inventory = (IInventory) tile;
                 final ItemStack itemStack = inventory.getStackInSlot(slot);
 
                 if (canBeDischarged(itemStack)) {
-                    if (itemStack.hasCapability(CapabilityEnergy.ENERGY, null)) {
-                        final IEnergyStorage itemEnergyStorage = itemStack.getCapability(CapabilityEnergy.ENERGY, null);
+                    final Item item = itemStack.getItem();
 
-                        if (energyStorage.getEnergyStored() < energyStorage.getMaxEnergyStored()) {
-                            final int needed = Math.round(Math.min(Integer.MAX_VALUE, (energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored())));
+                    if (item instanceof IEnergyContainerItem) {
+                        final IEnergyContainerItem itemEnergyContainer = (IEnergyContainerItem) item;
+                        final int needed = Math.round(Math.min(Integer.MAX_VALUE, (energyReceiver.getMaxEnergyStored(null) - energyReceiver.getEnergyStored(null))));
 
-                            energyStorage.receiveEnergy(itemEnergyStorage.extractEnergy(needed, false), false);
+                        if (energyReceiver.receiveEnergy(null, itemEnergyContainer.extractEnergy(itemStack, needed, true), true) > 0) {
+                            energyReceiver.receiveEnergy(null, itemEnergyContainer.extractEnergy(itemStack, needed, false), false);
                         }
                     }
                 }
@@ -42,6 +43,12 @@ public class EnergyUtility {
      * @return if the ItemStack can be discharged
      */
     public static boolean canBeDischarged(final ItemStack itemStack) {
-        return itemStack != null && itemStack.hasCapability(CapabilityEnergy.ENERGY, null) && itemStack.getCapability(CapabilityEnergy.ENERGY, null).canExtract();
+        if (itemStack != null) {
+            final Item item = itemStack.getItem();
+
+            return item instanceof IEnergyContainerItem && ((IEnergyContainerItem) item).extractEnergy(itemStack, 1, true) > 0;
+        }
+
+        return false;
     }
 }

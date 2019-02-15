@@ -1,13 +1,9 @@
 package org.halvors.nuclearphysics.common.block.debug;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.api.schematic.ISchematic;
 import org.halvors.nuclearphysics.common.block.BlockBase;
 import org.halvors.nuclearphysics.common.block.debug.schematic.SchematicAccelerator;
@@ -46,12 +42,14 @@ public class BlockCreativeBuilder extends BlockBase {
     }
 
     public BlockCreativeBuilder() {
-        super("creative_builder", Material.IRON);
+        super("creative_builder", Material.iron);
     }
 
     // Called when the block is right clicked by the player.
     @Override
-    public boolean onBlockActivated(final World world, final BlockPos pos, final IBlockState state, final EntityPlayer player, final EnumHand hand, final ItemStack itemStack, final EnumFacing side, final float hitX, final float hitY, final float hitZ) {
+    public boolean onBlockActivated(final World world, final int x, final int y, final int z, final EntityPlayer player, final int side, final float hitX, final float hitY, final float hitZ) {
+        final BlockPos pos = new BlockPos(x, y, z);
+
         if (schematicRegistry.size() > 0) {
             PlayerUtility.openGui(player, world, pos);
 

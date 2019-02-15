@@ -1,8 +1,8 @@
 package org.halvors.nuclearphysics.common.science.physics;
 
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
+import org.halvors.nuclearphysics.api.BlockPos;
 
 public class ThermalPhysics {
     public static final double ROOM_TEMPERATURE = 295;
@@ -18,7 +18,7 @@ public class ThermalPhysics {
      * @return The temperature of the coordinate in the world in kelvin.
      */
     public static double getTemperatureForCoordinate(final World world, final BlockPos pos) {
-        final double worldTemperature = world.getBiome(pos).getFloatTemperature(pos);
+        final double worldTemperature = world.getBiomeGenForCoords(pos.getX(), pos.getZ()).getFloatTemperature(pos.getX(), pos.getY(), pos.getZ());
         final double averageTemperature = ICE_MELT_TEMPERATURE + ((worldTemperature - 0.4) * 50);
         final double dayNightVariance = averageTemperature * 0.05;
 

@@ -2,7 +2,7 @@ package org.halvors.nuclearphysics.common.utility;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
+import org.halvors.nuclearphysics.api.BlockPos;
 
 import java.util.List;
 

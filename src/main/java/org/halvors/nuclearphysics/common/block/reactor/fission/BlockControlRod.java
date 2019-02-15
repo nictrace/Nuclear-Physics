@@ -1,37 +1,27 @@
 package org.halvors.nuclearphysics.common.block.reactor.fission;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
 import org.halvors.nuclearphysics.common.block.BlockBase;
-
-import javax.annotation.Nonnull;
 
 public class BlockControlRod extends BlockBase {
     public BlockControlRod() {
-        super("control_rod", Material.IRON);
+        super("control_rod", Material.iron);
 
         setHardness(0.6F);
+        setBlockBounds(0.3125F, 0, 0.3125F, 0.6875F, 1, 0.6875F);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    @Nonnull
-    public AxisAlignedBB getBoundingBox(final IBlockState state, final IBlockAccess access, final BlockPos pos) {
-        return new AxisAlignedBB(0.3125, 0, 0.3125, 0.6875, 1, 0.6875);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public boolean isOpaqueCube(final IBlockState state) {
+    @SideOnly(Side.CLIENT)
+    public boolean isOpaqueCube() {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public boolean isFullCube(final IBlockState state) {
+    @SideOnly(Side.CLIENT)
+    public boolean renderAsNormalBlock() {
         return false;
     }
 }

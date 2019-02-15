@@ -1,61 +1,86 @@
 package org.halvors.nuclearphysics.client.render.block.reactor;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.model.AdvancedModelLoader;
+import net.minecraftforge.client.model.IModelCustom;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.halvors.nuclearphysics.client.event.TextureEventHandler;
-import org.halvors.nuclearphysics.client.event.TextureEventHandler.EnumFluidType;
-import org.halvors.nuclearphysics.client.render.block.Model3D;
-import org.halvors.nuclearphysics.client.render.block.RenderTile;
+import org.halvors.nuclearphysics.client.render.ModelCube;
+import org.halvors.nuclearphysics.client.utility.RenderUtility;
 import org.halvors.nuclearphysics.common.init.ModFluids;
 import org.halvors.nuclearphysics.common.tile.reactor.TileReactorCell;
+import org.halvors.nuclearphysics.common.type.EnumResource;
+import org.halvors.nuclearphysics.common.utility.ResourceUtility;
+import org.lwjgl.opengl.GL11;
 
 @SideOnly(Side.CLIENT)
-public class RenderReactorCell extends RenderTile<TileReactorCell> {
-    private static final Model3D MODEL_PLASMA = new Model3D(0.26, 0.1, 0.26, 0.74, 0.9, 0.74);
-    private static final Model3D MODEL_FISSILE_FUEL = new Model3D(0.26, 0.1, 0.26, 0.74, 0.9, 0.74);
+public class RenderReactorCell extends TileEntitySpecialRenderer {
+    private static final IModelCustom MODEL = AdvancedModelLoader.loadModel(ResourceUtility.getResource(EnumResource.MODEL, "reactor_cell.obj"));
+    private static final ResourceLocation TEXTURE = ResourceUtility.getResource(EnumResource.TEXTURE_MODELS, "reactor_cell.png");
+    private static final ResourceLocation TEXTURE_FISSILE = ResourceUtility.getResource(EnumResource.TEXTURE_MODELS, "reactor_fissile_material.png");
+    private static final ResourceLocation TEXTURE_PLASMA = ResourceUtility.getResource(EnumResource.TEXTURE_BLOCKS, "fluids/plasma_still.png");
 
     @Override
-    protected void render(final TileReactorCell tile, final double x, final double y, final double z) {
-        // Render fissile fuel inside reactor.
-        final IFluidTank tank = tile.getTank();
-        final FluidStack fluidStack = tank.getFluid();
-        final ItemStack itemStack = tile.getInventory().getStackInSlot(0);
+    public void renderTileEntityAt(final TileEntity tile, final double x, final double y, final double z, final float partialTicks) {
+        if (tile instanceof TileReactorCell) {
+            final TileReactorCell tileReactorCell = (TileReactorCell) tile;
 
-        if (fluidStack != null && fluidStack.isFluidEqual(ModFluids.fluidStackPlasma) && tank.getFluidAmount() > 0) {
-            renderFuel(MODEL_PLASMA, TextureEventHandler.getFluidTexture(fluidStack.getFluid(), EnumFluidType.STILL), true);
-        } else if (itemStack != null) {
-            renderFuel(MODEL_FISSILE_FUEL, TextureEventHandler.getTexture("reactor_fissile_material"), false);
+            GL11.glPushMatrix();
+
+            bindTexture(TEXTURE);
+
+            // Translate to the location of our tile entity
+            GL11.glTranslated(x, y, z);
+            //GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+
+            // Rotate block based on direction.
+            RenderUtility.rotateBlockBasedOnDirection(tileReactorCell.getFacing());
+
+            MODEL.renderAll();
+
+            // Render fissile fuel inside reactor.
+            final IFluidTank tank = tileReactorCell.getTank();
+            final FluidStack fluidStack = tank.getFluid();
+            final ItemStack itemStack = tileReactorCell.getStackInSlot(0);
+
+            if (fluidStack != null && fluidStack.isFluidEqual(ModFluids.fluidStackPlasma) && tank.getFluidAmount() > 0) {
+                renderFuel(TEXTURE_PLASMA, true);
+            } else if (itemStack != null) {
+                renderFuel(TEXTURE_FISSILE, false);
+            }
+
+            GL11.glPopMatrix();
         }
     }
 
-    private void renderFuel(final Model3D model, final TextureAtlasSprite texture, final boolean isTransparent) {
-        GlStateManager.pushMatrix();
+    private void renderFuel(final ResourceLocation texture, final boolean isTransparent) {
+        GL11.glPushMatrix();
 
-        // Make fuel transparent.
+        bindTexture(texture);
+
+        // Make glass and fuel transparent?
         if (isTransparent) {
-            GlStateManager.enableBlend();
+            GL11.glEnable(GL11.GL_BLEND);
+        } else {
+            RenderHelper.disableStandardItemLighting();
         }
 
-        // Make glass transparent.
-        GlStateManager.disableAlpha();
-
-        if (model.getTexture() == null) {
-            model.setTexture(texture);
-        }
-
-        model.render();
+        GL11.glTranslated(0.5, 0.5, 0.5);
+        GL11.glScaled(0.48, 0.9, 0.48);
+        ModelCube.instance.render();
 
         if (isTransparent) {
-            GlStateManager.disableBlend();
+            GL11.glDisable(GL11.GL_BLEND);
+        } else {
+            RenderHelper.enableStandardItemLighting();
         }
 
-        GlStateManager.enableAlpha();
-
-        GlStateManager.popMatrix();
+        GL11.glPopMatrix();
     }
 }

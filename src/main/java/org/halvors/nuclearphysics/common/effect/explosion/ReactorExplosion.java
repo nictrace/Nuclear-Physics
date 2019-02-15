@@ -1,9 +1,11 @@
 package org.halvors.nuclearphysics.common.effect.explosion;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.init.Blocks;
+import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.IBlockAccess;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.common.init.ModBlocks;
 
 public class ReactorExplosion extends RadioactiveExplosion {
@@ -13,11 +15,14 @@ public class ReactorExplosion extends RadioactiveExplosion {
 
     @Override
     public void doExplosionB(final boolean spawnParticles) {
-        for (final BlockPos pos : getAffectedBlockPositions()) {
-            final IBlockState stateUnder = world.getBlockState(pos.down());
+        for (final Object affectedBlockPosition : affectedBlockPositions) {
+            final ChunkPosition chunkPosition = (ChunkPosition) affectedBlockPosition;
+            final BlockPos pos = new BlockPos(chunkPosition.chunkPosX, chunkPosition.chunkPosY, chunkPosition.chunkPosZ);
+            final Block block = pos.getBlock(world);
+            final Block blockUnder = pos.down().getBlock(world);
 
-            if (world.isAirBlock(pos) && stateUnder.isOpaqueCube() && random.nextInt(3) == 0) {
-                world.setBlockState(pos, ModBlocks.blockRadioactiveGrass.getDefaultState());
+            if (block == Blocks.air && blockUnder.isOpaqueCube() && random.nextInt(3) == 0) {
+                pos.setBlock(ModBlocks.blockRadioactiveGrass, world);
             }
         }
 

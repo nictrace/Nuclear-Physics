@@ -2,7 +2,6 @@ package org.halvors.nuclearphysics.common.effect.poison;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
@@ -10,6 +9,7 @@ import org.halvors.nuclearphysics.api.effect.poison.EnumPoisonType;
 import org.halvors.nuclearphysics.api.effect.poison.IPoison;
 import org.halvors.nuclearphysics.api.item.armor.IAntiPoisonArmor;
 import org.halvors.nuclearphysics.api.item.armor.IArmorSet;
+import org.halvors.nuclearphysics.api.item.armor.IArmorSet.EntityEquipmentSlot;
 import org.halvors.nuclearphysics.common.effect.potion.PotionBase;
 
 import java.awt.*;
@@ -41,7 +41,7 @@ public abstract class PoisonBase extends PotionBase implements IPoison {
         if (entity instanceof EntityPlayer) {
             final EntityPlayer player = (EntityPlayer) entity;
 
-            for (final ItemStack itemStack : player.getArmorInventoryList()) {
+            for (final ItemStack itemStack : player.inventory.armorInventory) {
                 if (itemStack != null) {
                     final Item item = itemStack.getItem();
 
@@ -55,7 +55,7 @@ public abstract class PoisonBase extends PotionBase implements IPoison {
                                 final IAntiPoisonArmor armor = (IAntiPoisonArmor) item;
 
                                 if (armor.isProtectedFromPoison(itemStack, entity, type)) {
-                                    armorWorn.add(armor.getEquipmentSlot());
+                                    armorWorn.add(armor.getArmorType());
                                     armor.onProtectFromPoison(itemStack, entity, type);
                                 }
                             }

@@ -1,60 +1,42 @@
 package org.halvors.nuclearphysics.common.block.reactor;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import org.halvors.nuclearphysics.api.BlockPos;
+import org.halvors.nuclearphysics.client.render.block.BlockRenderingHandler;
+import org.halvors.nuclearphysics.common.Reference;
 import org.halvors.nuclearphysics.common.block.BlockContainerBase;
 import org.halvors.nuclearphysics.common.tile.reactor.TileElectricTurbine;
 import org.halvors.nuclearphysics.common.utility.WrenchUtility;
 
-import javax.annotation.Nonnull;
-
 public class BlockElectricTurbine extends BlockContainerBase {
     public BlockElectricTurbine() {
-        super("electric_turbine", Material.IRON);
+        super("electric_turbine", Material.iron);
 
         setHardness(0.6F);
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    @Nonnull
-    @SideOnly(Side.CLIENT)
-    public EnumBlockRenderType getRenderType(final IBlockState state) {
-        return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
     @SideOnly(Side.CLIENT)
-    public boolean isFullCube(final IBlockState state) {
-        return false;
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    @SideOnly(Side.CLIENT)
-    public boolean isOpaqueCube(final IBlockState state) {
-        return false;
+    public void registerIcons(final IIconRegister iconRegister) {
+        blockIcon = iconRegister.registerIcon(Reference.PREFIX + "machine");
     }
 
     @Override
-    public boolean onBlockActivated(final World world, final BlockPos pos, final IBlockState state, final EntityPlayer player, final EnumHand hand, final ItemStack itemStack, final EnumFacing side, final float hitX, final float hitY, final float hitZ) {
-        final TileEntity tile = world.getTileEntity(pos);
+    public boolean onBlockActivated(final World world, final int x, final int y, final int z, final EntityPlayer player, final int side, final float hitX, final float hitY, final float hitZ) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final TileEntity tile = pos.getTileEntity(world);
 
         if (tile instanceof TileElectricTurbine) {
             final TileElectricTurbine tileTurbine = (TileElectricTurbine) tile;
 
-            if (WrenchUtility.hasUsableWrench(player, hand, pos)) {
+            if (WrenchUtility.hasUsableWrench(player, pos)) {
                 return tileTurbine.getMultiBlock().toggleConstruct();
             }
         }
@@ -63,20 +45,38 @@ public class BlockElectricTurbine extends BlockContainerBase {
     }
 
     @Override
-    public void breakBlock(@Nonnull final World world, @Nonnull final BlockPos pos, @Nonnull final IBlockState state) {
-        final TileEntity tile = world.getTileEntity(pos);
+    public void breakBlock(final World world, final int x, final int y, final int z, final Block block, final int metadata) {
+        final BlockPos pos = new BlockPos(x, y, z);
+        final TileEntity tile = pos.getTileEntity(world);
 
         if (tile instanceof TileElectricTurbine) {
             final TileElectricTurbine tileTurbine = (TileElectricTurbine) tile;
             tileTurbine.getMultiBlock().deconstruct();
         }
 
-        super.breakBlock(world, pos, state);
+        super.breakBlock(world, x, y, z, block, metadata);
     }
 
     @Override
-    @Nonnull
-    public TileEntity createTileEntity(@Nonnull final World world, @Nonnull final IBlockState state) {
+    @SideOnly(Side.CLIENT)
+    public boolean isOpaqueCube() {
+        return false;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean renderAsNormalBlock() {
+        return false;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int getRenderType() {
+        return BlockRenderingHandler.getInstance().getRenderId();
+    }
+
+    @Override
+    public TileEntity createTileEntity(final World world, final int metadata) {
         return new TileElectricTurbine();
     }
 }

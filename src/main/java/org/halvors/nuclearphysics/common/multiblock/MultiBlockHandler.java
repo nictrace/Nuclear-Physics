@@ -3,7 +3,7 @@ package org.halvors.nuclearphysics.common.multiblock;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.api.nbt.ISaveObject;
 import org.halvors.nuclearphysics.common.utility.VectorUtility;
 
@@ -136,8 +136,8 @@ public class MultiBlockHandler<W extends IMultiBlockStructure> implements ISaveO
     }
 
     @SuppressWarnings("unchecked")
-    public W getWrapperAt(final BlockPos pos) {
-        final TileEntity tile = self.getWorldObject().getTileEntity(pos);
+    public W getWrapperAt(final BlockPos position) {
+        final TileEntity tile = position.getTileEntity(self.getWorldObject());
 
         if (tile != null && wrapperClass.isAssignableFrom(tile.getClass())) {
             return (W) tile;

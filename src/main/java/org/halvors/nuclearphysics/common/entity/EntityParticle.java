@@ -1,44 +1,39 @@
 package org.halvors.nuclearphysics.common.entity;
 
+import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.datasync.DataParameter;
-import net.minecraft.network.datasync.DataSerializers;
-import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.Axis;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.common.ForgeChunkManager.Ticket;
 import net.minecraftforge.common.ForgeChunkManager.Type;
-import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.common.util.ForgeDirection;
+import org.halvors.nuclearphysics.api.BlockPos;
 import org.halvors.nuclearphysics.api.tile.IElectromagnet;
 import org.halvors.nuclearphysics.common.NuclearPhysics;
 import org.halvors.nuclearphysics.common.init.ModPotions;
-import org.halvors.nuclearphysics.common.init.ModSoundEvents;
+import org.halvors.nuclearphysics.common.init.ModSounds;
 import org.halvors.nuclearphysics.common.tile.particle.TileParticleAccelerator;
+import org.halvors.nuclearphysics.common.utility.RotationUtility;
 import org.halvors.nuclearphysics.common.utility.VectorUtility;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class EntityParticle extends Entity implements IEntityAdditionalSpawnData {
-    private static final DataParameter<EnumFacing> movementDirectionParameter = EntityDataManager.createKey(EntityParticle.class, DataSerializers.FACING);
+    private static final int movementDirectionId = 20;
 
     public Ticket updateTicket;
     private boolean didCollide;
     private int lastTurn = 60;
 
-    private BlockPos movementPos;
-    private EnumFacing movementDirection = EnumFacing.NORTH;
+    private BlockPos movementPos = new BlockPos(0, 0, 0);
+    private ForgeDirection movementDirection = ForgeDirection.NORTH;
 
     public EntityParticle(final World world) {
         super(world);
@@ -46,13 +41,13 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
         ignoreFrustumCheck = true;
 
         if (world.isRemote) {
-            setRenderDistanceWeight(4);
+            renderDistanceWeight = 4;
         }
 
         setSize(0.3F, 0.3F);
     }
 
-    public EntityParticle(final World world, final BlockPos pos, final BlockPos movementPos, final EnumFacing movementDirection) {
+    public EntityParticle(final World world, final BlockPos pos, final BlockPos movementPos, final ForgeDirection movementDirection) {
         this(world);
 
         this.movementPos = movementPos;
@@ -73,10 +68,10 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
      * @return true if the spawn location is clear and 2 electromagnets are next to the location
      */
     public static boolean canSpawnParticle(final World world, final BlockPos pos) {
-        if (world.isAirBlock(pos)) {
+        if (pos.isAirBlock(world)) {
             int electromagnetCount = 0;
 
-            for (EnumFacing side : EnumFacing.values()) {
+            for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
                 if (isElectromagnet(world, pos, side)) {
                     electromagnetCount++;
                 }
@@ -92,12 +87,12 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
      * Checks to see if the block is an instance of IElectromagnet and is turned on
      * @param world - world to check in
      * @param pos - position to look for the block/tile
-     * @param side - direction to check in
+     * @param facing - direction to check in
      * @return true if the location contains an active electromagnet block
      */
-    public static boolean isElectromagnet(final World world, final BlockPos pos, final EnumFacing side) {
-        final BlockPos checkPos = pos.offset(side);
-        final TileEntity tile = world.getTileEntity(checkPos);
+    public static boolean isElectromagnet(final World world, final BlockPos pos, final ForgeDirection facing) {
+        final BlockPos checkPos = pos.offset(facing);
+        final TileEntity tile = checkPos.getTileEntity(world);
 
         return tile instanceof IElectromagnet && ((IElectromagnet) tile).isRunning();
     }
@@ -113,12 +108,12 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
     @Override
     public void readSpawnData(final ByteBuf data) {
         movementPos = new BlockPos(data.readInt(), data.readInt(), data.readInt());
-        movementDirection = EnumFacing.getFront(data.readInt());
+        movementDirection = ForgeDirection.getOrientation(data.readInt());
     }
 
     @Override
     public void onUpdate() {
-        final TileEntity tile = world.getTileEntity(movementPos);
+        final TileEntity tile = movementPos.getTileEntity(worldObj);
 
         if (tile instanceof TileParticleAccelerator) {
             final TileParticleAccelerator tileParticleAccelerator = (TileParticleAccelerator) tile;
@@ -126,7 +121,7 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
 
             // Play sound effects.
             if (ticksExisted % 10 == 0) {
-                world.playSound(posX, posY, posZ, ModSoundEvents.ANTIMATTER, SoundCategory.BLOCKS, 1, (float) (0.6 + (0.4 * (getVelocity() / TileParticleAccelerator.ANTIMATTER_CREATION_SPEED))), true);
+                worldObj.playSound(posX, posY, posZ, ModSounds.ANTIMATTER, 1, (float) (0.6 + (0.4 * (getVelocity() / TileParticleAccelerator.ANTIMATTER_CREATION_SPEED))), true);
             }
 
             // Sanity check
@@ -138,21 +133,21 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
             // TODO: Calculate direction so to only load two chunks instead of 5.
             for (int x = -1; x < 1; x++) {
                 for (int z = -1; z < 1; z++) {
-                    ForgeChunkManager.forceChunk(updateTicket, new ChunkPos(((int) posX >> 4) + x, ((int) posZ >> 4) + z));
+                    ForgeChunkManager.forceChunk(updateTicket, new ChunkCoordIntPair(((int) posX >> 4) + x, ((int) posZ >> 4) + z));
                 }
             }
 
             // Update data watcher.
-            if (!world.isRemote) {
-                dataManager.set(movementDirectionParameter, movementDirection);
+            if (!worldObj.isRemote) {
+                dataWatcher.updateObject(movementDirectionId, (byte) movementDirection.ordinal());
             } else {
-                movementDirection = dataManager.get(movementDirectionParameter);
+                movementDirection = ForgeDirection.getOrientation(dataWatcher.getWatchableObjectByte(movementDirectionId));
             }
 
-            final BlockPos pos = getPosition().down();
+            final BlockPos pos = new BlockPos(this);
 
-            if ((!isElectromagnet(world, pos, movementDirection.rotateAround(Axis.Y)) ||
-                 !isElectromagnet(world, pos, movementDirection.getOpposite().rotateAround(Axis.Y))) && lastTurn <= 0) {
+            if ((!isElectromagnet(worldObj, pos, movementDirection.getRotation(ForgeDirection.UP)) ||
+                 !isElectromagnet(worldObj, pos, movementDirection.getRotation(ForgeDirection.DOWN))) && lastTurn <= 0) {
                 acceleration = turn();
                 motionX = 0;
                 motionY = 0;
@@ -163,37 +158,39 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
             lastTurn--;
 
             // Checks if the current block condition allows the particle to exist.
-            if (!canSpawnParticle(world, pos) || isCollided) {
+            if (!canSpawnParticle(worldObj, pos) || isCollided) {
                 handleCollisionWithEntity();
 
                 return;
             }
 
-            final BlockPos accelerationPos = VectorUtility.scale(BlockPos.ORIGIN.offset(movementDirection), acceleration);
+            final double accelerationX = movementDirection.offsetX * acceleration;
+            final double accelerationY = movementDirection.offsetY * acceleration;
+            final double accelerationZ = movementDirection.offsetZ * acceleration;
 
-            motionX = Math.min(accelerationPos.getX() + motionX, TileParticleAccelerator.ANTIMATTER_CREATION_SPEED);
-            motionY = Math.min(accelerationPos.getY() + motionY, TileParticleAccelerator.ANTIMATTER_CREATION_SPEED);
-            motionZ = Math.min(accelerationPos.getZ() + motionZ, TileParticleAccelerator.ANTIMATTER_CREATION_SPEED);
+            motionX = Math.min(motionX + accelerationX, TileParticleAccelerator.ANTIMATTER_CREATION_SPEED);
+            motionY = Math.min(motionY + accelerationY, TileParticleAccelerator.ANTIMATTER_CREATION_SPEED);
+            motionZ = Math.min(motionZ + accelerationZ, TileParticleAccelerator.ANTIMATTER_CREATION_SPEED);
             isAirBorne = true;
 
             lastTickPosX = posX;
             lastTickPosY = posY;
             lastTickPosZ = posZ;
 
-            move(motionX, motionY, motionZ);
+            moveEntity(motionX, motionY, motionZ);
             setPosition(posX, posY, posZ);
 
             if (lastTickPosX == posX && lastTickPosY == posY && lastTickPosZ == posZ && getVelocity() <= 0 && lastTurn <= 0) {
                 setDead();
             }
 
-            world.spawnParticle(EnumParticleTypes.PORTAL, posX, posY, posZ, 0, 0, 0);
-            world.spawnParticle(EnumParticleTypes.SMOKE_LARGE, posX, posY, posZ, 0, 0, 0);
+            worldObj.spawnParticle("portal", posX, posY, posZ, 0, 0, 0);
+            worldObj.spawnParticle("largesmoke", posX, posY, posZ, 0, 0, 0);
 
             final float radius = 0.5F;
 
-            AxisAlignedBB bounds = new AxisAlignedBB(posX - radius, posY - radius, posZ - radius, posX + radius, posY + radius, posZ + radius);
-            List<Entity> entitiesNearby = world.getEntitiesWithinAABB(Entity.class, bounds);
+            AxisAlignedBB bounds = AxisAlignedBB.getBoundingBox(posX - radius, posY - radius, posZ - radius, posX + radius, posY + radius, posZ + radius);
+            List<Entity> entitiesNearby = worldObj.getEntitiesWithinAABB(Entity.class, bounds);
 
             if (entitiesNearby.size() > 1) {
                 applyEntityCollision(this);
@@ -205,10 +202,10 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
 
     @Override
     protected void entityInit() {
-        dataManager.register(movementDirectionParameter, EnumFacing.SOUTH);
+        dataWatcher.addObject(movementDirectionId, (byte) EnumFacing.SOUTH.ordinal());
 
         if (updateTicket == null) {
-            updateTicket = ForgeChunkManager.requestTicket(NuclearPhysics.getInstance(), world, Type.ENTITY);
+            updateTicket = ForgeChunkManager.requestTicket(NuclearPhysics.getInstance(), worldObj, Type.ENTITY);
 
             if (updateTicket != null) {
                 updateTicket.getModData();
@@ -218,13 +215,13 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
     }
 
     @Override
-    protected void readEntityFromNBT(@Nonnull final NBTTagCompound tag) {
+    protected void readEntityFromNBT(final NBTTagCompound tag) {
         movementPos = new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z"));
-        movementDirection = EnumFacing.getFront(tag.getByte("direction"));
+        movementDirection = ForgeDirection.getOrientation(tag.getByte("direction"));
     }
 
     @Override
-    protected void writeEntityToNBT(@Nonnull final NBTTagCompound tag) {
+    protected void writeEntityToNBT(final NBTTagCompound tag) {
         tag.setInteger("x", movementPos.getX());
         tag.setInteger("y", movementPos.getY());
         tag.setInteger("z", movementPos.getZ());
@@ -232,7 +229,7 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
     }
 
     @Override
-    public void applyEntityCollision(@Nonnull final Entity entity) {
+    public void applyEntityCollision(final Entity entity) {
         handleCollisionWithEntity();
     }
 
@@ -250,13 +247,15 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
      */
     private double turn() {
         // TODO: Rewrite to allow for up and down turning
-        final EnumFacing leftDirection = movementDirection.getOpposite().rotateAround(Axis.Y);
-        final EnumFacing rightDirection = movementDirection.rotateAround(Axis.Y);
-        final BlockPos pos = getPosition().down();
+        final BlockPos pos = new BlockPos(this);
+        final ForgeDirection leftDirection = ForgeDirection.getOrientation(RotationUtility.relativeMatrix[movementDirection.ordinal()][ForgeDirection.WEST.ordinal()]);
+        final ForgeDirection rightDirection = ForgeDirection.getOrientation(RotationUtility.relativeMatrix[movementDirection.ordinal()][ForgeDirection.EAST.ordinal()]);
+        final BlockPos leftPos = pos.offset(leftDirection);
+        final BlockPos rightPos = pos.offset(rightDirection);
 
-        if (world.isAirBlock(pos.offset(leftDirection))) {
+        if (leftPos.isAirBlock(worldObj)) {
             movementDirection = leftDirection;
-        } else if (world.isAirBlock(pos.offset(rightDirection))) {
+        } else if (rightPos.isAirBlock(worldObj)) {
             movementDirection = rightDirection;
         } else {
             setDead();
@@ -270,13 +269,13 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
     }
 
     private void handleCollisionWithEntity() {
-        world.playSound(posX, posY, posZ, ModSoundEvents.ANTIMATTER, SoundCategory.BLOCKS, 1.5F, 1F - world.rand.nextFloat() * 0.3F, true);
+        worldObj.playSound(posX, posY, posZ, ModSounds.ANTIMATTER, 1.5F, 1F - worldObj.rand.nextFloat() * 0.3F, true);
 
-        if (!world.isRemote) {
+        if (!worldObj.isRemote) {
             if (getVelocity() > TileParticleAccelerator.ANTIMATTER_CREATION_SPEED / 2) {
                 final float radius = 1;
-                final AxisAlignedBB bounds = new AxisAlignedBB(posX - radius, posY - radius, posZ - radius, posX + radius, posY + radius, posZ + radius);
-                final List<EntityParticle> entitiesNearby = world.getEntitiesWithinAABB(EntityParticle.class, bounds);
+                final AxisAlignedBB bounds = AxisAlignedBB.getBoundingBox(posX - radius, posY - radius, posZ - radius, posX + radius, posY + radius, posZ + radius);
+                final List<EntityParticle> entitiesNearby = worldObj.getEntitiesWithinAABB(EntityParticle.class, bounds);
 
                 if (entitiesNearby.size() > 0) {
                     didCollide = true;
@@ -286,12 +285,12 @@ public class EntityParticle extends Entity implements IEntityAdditionalSpawnData
                 }
             }
 
-            world.createExplosion(this, posX, posY, posZ, (float) getVelocity() * 2.5F, true);
+            worldObj.createExplosion(this, posX, posY, posZ, (float) getVelocity() * 2.5F, true);
         }
 
         final float radius = 6;
-        final AxisAlignedBB bounds = new AxisAlignedBB(posX - radius, posY - radius, posZ - radius, posX + radius, posY + radius, posZ + radius);
-        final List<EntityLivingBase> entitiesNearby = world.getEntitiesWithinAABB(EntityLivingBase.class, bounds);
+        final AxisAlignedBB bounds = AxisAlignedBB.getBoundingBox(posX - radius, posY - radius, posZ - radius, posX + radius, posY + radius, posZ + radius);
+        final List<EntityLivingBase> entitiesNearby = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, bounds);
 
         for (EntityLivingBase entity : entitiesNearby) {
             ModPotions.poisonRadiation.poisonEntity(entity);
